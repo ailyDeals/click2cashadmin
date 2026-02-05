@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Shop Admin - Central Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --p: #FF4757; --s: #2F3542; --bg: #F1F2F6; --white: #fff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--bg); color: var(--s); }
+
+        .header { background: var(--s); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .tabs { display: flex; overflow-x: auto; background: white; padding: 10px; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .tab-btn { padding: 10px 18px; border: none; background: #eee; border-radius: 30px; cursor: pointer; white-space: nowrap; font-weight: 600; font-size: 13px; transition: 0.3s; }
+        .tab-btn.active { background: var(--p); color: white; }
+
+        .container { padding: 20px; display: none; }
+        .container.active { display: block; }
+
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-top: 5px; outline: none; background: #fdfdfd; }
+        
+        .btn { background: var(--p); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: 600; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; margin-right: 5px; margin-top: 5px; }
+        .btn-green { background: #2ed573; }
+        .btn-blue { background: #1e90ff; }
+        .btn-red { background: #ff4757; }
+
+        .list-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--p); position: relative; }
+        .status-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; color: white; text-transform: uppercase; float: right; }
+        .pending { background: #ffa502; }
+        .completed { background: #2ed573; }
+        
+        img.thumb { width: 40px; height: 40px; border-radius: 5px; object-fit: cover; vertical-align: middle; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>E-Shop Manager</h2>
+    <p style="font-size: 11px; opacity: 0.8;">অল-ইন-ওয়ান অ্যাডমিন ড্যাশবোর্ড</p>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="showTab('orders', this)">অর্ডারসমূহ</button>
+    <button class="tab-btn" onclick="showTab('wallet', this)">ওয়ালেট রিকোয়েস্ট</button>
+    <button class="tab-btn" onclick="showTab('products', this)">পণ্য ম্যানেজ</button>
+    <button class="tab-btn" onclick="showTab('settings', this)">পেমেন্ট সেটিংস</button>
+</div>
+
+<div id="orders" class="container active">
+    <h3>নতুন অর্ডারসমূহ (১২% অ্যাডভান্স)</h3>
+    <div id="adminOrderList" style="margin-top: 15px;"></div>
+</div>
+
+<div id="wallet" class="container">
+    <h3>ওয়ালেট রিকোয়েস্ট (অ্যাড মানি)</h3>
+    <div id="adminWalletList" style="margin-top: 15px;"></div>
+</div>
+
+<div id="products" class="container">
+    <div class="card">
+        <h3>নতুন পণ্য যোগ করুন</h3>
+        <input type="text" id="pName" placeholder="পণ্যের নাম">
+        <input type="number" id="pPrice" placeholder="মূল্য (৳)">
+        <input type="text" id="pImage" placeholder="ছবির ডাইরেক্ট লিঙ্ক (URL)">
+        <input type="text" id="pVar" placeholder="ভ্যারিয়েন্ট (কমা দিয়ে যেমন: M, L, XL)">
+        <button class="btn" style="margin-top: 10px;" onclick="saveProduct()">সেভ করুন</button>
+    </div>
+    <h3>আপনার স্টোর</h3>
+    <div id="adminProductList"></div>
+</div>
+
+<div id="settings" class="container">
+    <div class="card">
+        <h3>পেমেন্ট নম্বর সেট করুন</h3>
+        <p style="font-size: 11px; color: #777;">ইউজাররা পেমেন্ট করার সময় এই নম্বরগুলোই দেখতে পাবে।</p>
+        <input type="text" id="mName" placeholder="মেথডের নাম (বিকাশ পারসোনাল/নগদ)">
+        <input type="text" id="mNumber" placeholder="আপনার ১০ বা ১১ ডিজিটের নম্বর">
+        <input type="text" id="mLogo" placeholder="লোগো লিঙ্ক (বিকাশ লোগো URL)">
+        <button class="btn btn-blue" style="margin-top: 10px;" onclick="addPaymentMethod()">মেথড অ্যাড করুন</button>
+    </div>
+    <h3>সক্রিয় মেথডসমূহ</h3>
+    <div id="adminMethodList"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyA813ETR3hxfcUqyILdr1wSVgyXI1MvvNg",
+        authDomain: "gamestore-3addc.firebaseapp.com",
+        projectId: "gamestore-3addc",
+        storageBucket: "gamestore-3addc.appspot.com",
+        messagingSenderId: "243275206854",
+        appId: "1:243275206854:web:2feb8968aad9e27eb547c7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function showTab(id, el) {
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        el.classList.add('active');
+    }
+
+    // --- ১. অর্ডার লোড ও ম্যানেজ ---
+    db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => {
+        const cont = document.getElementById('adminOrderList');
+        cont.innerHTML = snap.empty ? '<p>কোনো অর্ডার নেই</p>' : '';
+        snap.forEach(doc => {
+            const o = doc.data();
+            cont.innerHTML += `
+            <div class="list-item">
+                <span class="status-badge ${o.status.toLowerCase()}">${o.status}</span>
+                <strong>${o.pName}</strong> (${o.variant})<br>
+                <small>মোট: ৳${o.totalPrice} | <b>অগ্রিম: ৳${o.advance}</b></small><br>
+                <small>মেথড: ${o.paymentMethod} | TrxID: ${o.trxId}</small><br>
+                <small>ঠিকানা: ${o.address}</small><br>
+                ${o.status === 'Pending' ? `<button class="btn btn-sm btn-green" onclick="updateStatus('orders','${doc.id}','Completed')">ডেলিভারি ডান</button>` : ''}
+                <button class="btn btn-sm btn-red" onclick="deleteDoc('orders','${doc.id}')">ডিলিট</button>
+            </div>`;
+        });
+    });
+
+    // --- ২. ওয়ালেট রিকোয়েস্ট ম্যানেজ ---
+    db.collection('walletReqs').onSnapshot(snap => {
+        const cont = document.getElementById('adminWalletList');
+        cont.innerHTML = snap.empty ? '<p>কোনো রিকোয়েস্ট নেই</p>' : '';
+        snap.forEach(doc => {
+            const r = doc.data();
+            cont.innerHTML += `
+            <div class="list-item" style="border-left-color: #1e90ff;">
+                <strong>পরিমাণ: ৳${r.amount}</strong> (${r.method})<br>
+                <small>TrxID: ${r.trxId}</small><br>
+                <button class="btn btn-sm btn-blue" onclick="approveWallet('${doc.id}','${r.userId}',${r.amount})">টাকা অ্যাড করুন</button>
+                <button class="btn btn-sm btn-red" onclick="deleteDoc('walletReqs','${doc.id}')">বাতিল</button>
+            </div>`;
+        });
+    });
+
+    async function approveWallet(reqId, uid, amt) {
+        const uRef = db.collection('users').doc(uid);
+        const uDoc = await uRef.get();
+        const currentBal = uDoc.data().walletBalance || 0;
+        await uRef.update({ walletBalance: currentBal + amt });
+        await db.collection('walletReqs').doc(reqId).delete();
+        alert('ইউজার ওয়ালেটে টাকা যোগ হয়েছে!');
+    }
+
+    // --- ৩. প্রোডাক্ট ম্যানেজমেন্ট ---
+    async function saveProduct() {
+        const name = document.getElementById('pName').value, price = Number(document.getElementById('pPrice').value), image = document.getElementById('pImage').value, variants = document.getElementById('pVar').value.split(',').map(v => v.trim());
+        if(!name || !price || !image) return alert('সব তথ্য দিন');
+        await db.collection('products').add({ name, price, image, variants });
+        alert('পণ্য যোগ হয়েছে!');
+    }
+
+    db.collection('products').onSnapshot(snap => {
+        const cont = document.getElementById('adminProductList');
+        cont.innerHTML = '';
+        snap.forEach(doc => {
+            const p = doc.data();
+            cont.innerHTML += `<div class="list-item"><img src="${p.image}" class="thumb"><b>${p.name}</b> (৳${p.price}) <button class="btn btn-sm btn-red" style="float:right" onclick="deleteDoc('products','${doc.id}')">ডিলিট</button></div>`;
+        });
+    });
+
+    // --- ৪. পেমেন্ট মেথড সেটিংস ---
+    async function addPaymentMethod() {
+        const name = document.getElementById('mName').value, number = document.getElementById('mNumber').value, logoUrl = document.getElementById('mLogo').value;
+        if(!name || !number) return alert('নাম ও নম্বর দিন');
+        await db.collection('paymentMethods').add({ name, number, logoUrl });
+        alert('পেমেন্ট মেথড সেভ হয়েছে!');
+    }
+
+    db.collection('paymentMethods').onSnapshot(snap => {
+        const cont = document.getElementById('adminMethodList');
+        cont.innerHTML = '';
+        snap.forEach(doc => {
+            const m = doc.data();
+            cont.innerHTML += `<div class="list-item"><img src="${m.logoUrl}" class="thumb"><b>${m.name}</b>: ${m.number} <button class="btn btn-sm btn-red" style="float:right" onclick="deleteDoc('paymentMethods','${doc.id}')">ডিলিট</button></div>`;
+        });
+    });
+
+    // কমন ফাংশন
+    function updateStatus(col, id, status) { db.collection(col).doc(id).update({ status }); }
+    function deleteDoc(col, id) { if(confirm('আপনি কি নিশ্চিত?')) db.collection(col).doc(id).delete(); }
+
+</script>
+</body>
+</html>
