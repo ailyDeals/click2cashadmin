@@ -711,6 +711,10 @@
               <button onclick="filterTaskProofs('all')" id="proof-filter-all" class="proof-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800 text-xs font-bold">
                 সকল
               </button>
+              <button onclick="loadAllArchiveTaskProofs()" id="btn-load-archive-proofs" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-500/30 transition-all flex items-center gap-1.5" title="পুরোনো সকল প্রুফ ডাটাবেজ থেকে লোড করুন">
+                <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+                <span>আর্কাইভ প্রুফ লোড</span>
+              </button>
             </div>
           </div>
         </div>
@@ -767,6 +771,10 @@
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1.5">অফিশিয়াল টেলিগ্রাম চ্যানেল/গ্রুপ লিংক:</label>
               <input type="url" id="set-telegram-url" placeholder="https://t.me/your_channel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-sky-400 font-mono focus:outline-none focus:border-sky-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">অফিশিয়াল ইউটিউব চ্যানেল/ভিডিও গাইড লিংক:</label>
+              <input type="url" id="set-youtube-url" placeholder="https://youtube.com/@your_channel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-rose-400 font-mono focus:outline-none focus:border-rose-500">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1.5">অফিশিয়াল ফেসবুক সাপোর্ট পেজ/গ্রুপ লিংক:</label>
@@ -1172,6 +1180,88 @@
     </div>
   </div>
 
+  <!-- MODAL: WITHDRAWAL REFERRAL & TASK AUDIT INSPECTOR (ANTI-FRAUD) -->
+  <div id="modal-withdraw-audit" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl relative">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3.5 mb-3 border-b border-slate-800 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-lg">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <span>উইথড্র আবেদন ও রেফারেল অডিট ইনস্পেক্টর</span>
+              <span id="audit-risk-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">যাচাই হচ্ছে...</span>
+            </h3>
+            <p class="text-xs text-slate-400">টাকা পাঠানোর আগে ইউজারের রেফার করা ব্যক্তিরা কখন কোন কাজ করে ৫,০০০ কয়েন ইনকাম করেছে তা দেখুন</p>
+          </div>
+        </div>
+        <button onclick="closeAdminModal('modal-withdraw-audit')" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+        <!-- Applicant & Payment Details Card -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div>
+            <span class="text-slate-400 block text-[11px]">আবেদনকারী ইউজার:</span>
+            <span id="audit-user-name" class="font-bold text-white text-sm">--</span>
+            <span id="audit-user-phone" class="font-mono text-emerald-400 block text-[11px]">--</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">উইথড্র পরিমাণ:</span>
+            <span id="audit-wdr-amount" class="font-black text-rose-400 text-base font-mono">৳০</span>
+            <span id="audit-wdr-coins" class="text-amber-400 font-mono block text-[10px]">০ কয়েন কর্তন</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">পেমেন্ট মেথড ও নম্বর:</span>
+            <span id="audit-wdr-method" class="font-bold text-white block">bKash</span>
+            <span id="audit-wdr-account" class="font-mono text-emerald-400 font-bold block">--</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">আবেদনের সময়:</span>
+            <span id="audit-wdr-date" class="font-mono text-slate-300 block">--</span>
+            <span id="audit-wdr-status" class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold">পেন্ডিং</span>
+          </div>
+        </div>
+
+        <!-- Fraud Analysis Card -->
+        <div id="audit-fraud-card" class="rounded-2xl p-4 border transition-all">
+          <!-- Populated dynamically: Shows whether user meets the 5 completed 5,000 coin referrals or is fraud -->
+        </div>
+
+        <!-- Referrals Work Details Section -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+              <span>রেফার সদস্যদের কাজের হিস্ট্রি ও তারিখভিত্তিক বিবরণ</span>
+            </h4>
+            <span id="audit-ref-count-pill" class="text-xs text-slate-400 font-mono">০ জন রেফারেল</span>
+          </div>
+
+          <div id="audit-referrals-container" class="space-y-3">
+            <!-- Dynamic referral cards -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Action Buttons -->
+      <div id="audit-modal-footer" class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div class="text-xs text-slate-400 flex items-center gap-1.5">
+          <i data-lucide="info" class="w-4 h-4 text-cyan-400"></i>
+          <span>৫ জন সম্পন্ন রেফারেল না থাকলে পেমেন্ট বাতিল ও কয়েন রিফান্ড করতে পারেন।</span>
+        </div>
+        <div id="audit-action-btns" class="flex items-center gap-2">
+          <!-- Dynamic Action Buttons -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT LOGIC -->
   <script>
     const firebaseConfig = {
@@ -1237,13 +1327,29 @@
       return st === 'rejected' || st === 'বাতিল';
     }
 
+    let lucideDebounceTimer = null;
+    function scheduleLucideIcons(rootEl) {
+      if (lucideDebounceTimer) clearTimeout(lucideDebounceTimer);
+      lucideDebounceTimer = setTimeout(() => {
+        try {
+          if (typeof lucide !== 'undefined') {
+            if (rootEl && rootEl.nodeType === 1) {
+              lucide.createIcons({ root: rootEl });
+            } else {
+              lucide.createIcons();
+            }
+          }
+        } catch(e) {}
+      }, 50);
+    }
+
     function showToast(msg) {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = 'bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-emerald-500/40 text-xs font-bold flex items-center gap-2 animate-bounce';
       toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
       container.appendChild(toast);
-      lucide.createIcons();
+      scheduleLucideIcons(toast);
       setTimeout(() => toast.remove(), 3500);
     }
 
@@ -1266,7 +1372,60 @@
       location.reload();
     }
 
+    let currentAdminTab = 'overview';
+    const dirtyTabs = {
+      overview: true,
+      tasks: true,
+      adlinks: true,
+      postbacks: true,
+      task_proofs: true,
+      users: true,
+      referrals: true,
+      withdrawals: true,
+      deposits: true,
+      promo: true,
+      tickets: true,
+      notifications: true,
+      settings: true
+    };
+
+    const tabRenderers = {
+      overview: () => {
+        updateOverviewStats();
+        renderRecentWithdrawals();
+        renderRecentDeposits();
+      },
+      tasks: () => renderTasksTable(),
+      adlinks: () => renderAdLinksTable(),
+      postbacks: () => renderPostbacksTable(),
+      task_proofs: () => renderTaskProofsTable(),
+      users: () => renderUsersTable(),
+      referrals: () => renderReferralLogsTable(),
+      withdrawals: () => renderWithdrawalsTable(),
+      deposits: () => renderDepositsTable(),
+      promo: () => renderPromoGrid(),
+      tickets: () => renderTicketsList(),
+      notifications: () => renderSentNotificationsTable(),
+      settings: () => renderAppSettingsForm()
+    };
+
+    const renderDebounceTimers = {};
+    function debounceRender(key, fn, delay = 80) {
+      if (renderDebounceTimers[key]) clearTimeout(renderDebounceTimers[key]);
+      renderDebounceTimers[key] = setTimeout(() => {
+        try { if (typeof fn === 'function') fn(); } catch(e) { console.error('Render err for ' + key, e); }
+      }, delay);
+    }
+
+    function markTabDirty(tabKey) {
+      dirtyTabs[tabKey] = true;
+      if (currentAdminTab === tabKey && tabRenderers[tabKey]) {
+        debounceRender(tabKey, tabRenderers[tabKey], 80);
+      }
+    }
+
     function switchAdminTab(tabId) {
+      currentAdminTab = tabId;
       const tabs = ['overview', 'tasks', 'adlinks', 'postbacks', 'task_proofs', 'users', 'referrals', 'withdrawals', 'deposits', 'promo', 'tickets', 'notifications', 'settings'];
       tabs.forEach(t => {
         const el = document.getElementById(`admin-view-${t}`);
@@ -1282,7 +1441,13 @@
           btn.classList.remove('active', 'bg-slate-800', 'text-white');
         }
       });
-      lucide.createIcons();
+
+      if (dirtyTabs[tabId] && tabRenderers[tabId]) {
+        dirtyTabs[tabId] = false;
+        tabRenderers[tabId]();
+      }
+
+      scheduleLucideIcons(activeEl);
     }
 
     function initAdminData() {
@@ -1292,28 +1457,33 @@
         return;
       }
 
+      // Initial fast paint of overview
+      dirtyTabs.overview = false;
+      debounceRender('overviewStats', updateOverviewStats, 50);
+
       fbDatabase.ref('appSettings').on('value', (snap) => {
         adminState.appSettings = snap.val() || {};
-        renderAppSettingsForm();
+        markTabDirty('settings');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('users').on('value', (snap) => {
         adminState.users = snap.val() || {};
-        renderUsersTable();
-        renderReferralLogsTable();
-        updateOverviewStats();
+        markTabDirty('users');
+        markTabDirty('referrals');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('tasks').on('value', (snap) => {
         adminState.tasks = snap.val() || {};
-        renderTasksTable();
-        updateOverviewStats();
+        markTabDirty('tasks');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('adLinks').on('value', (snap) => {
         adminState.adLinks = snap.val() || {};
-        renderAdLinksTable();
-        updateOverviewStats();
+        markTabDirty('adlinks');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('withdrawRequests').on('value', (snap) => {
@@ -1321,9 +1491,9 @@
         Object.entries(reqs).forEach(([k, v]) => {
           adminState.withdrawals[k] = { ...v, _path: 'withdrawRequests/' + k };
         });
-        renderWithdrawalsTable();
-        renderRecentWithdrawals();
-        updateOverviewStats();
+        markTabDirty('withdrawals');
+        debounceRender('recentWdrs', renderRecentWithdrawals, 80);
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('withdrawals').on('value', (snap) => {
@@ -1333,50 +1503,51 @@
             adminState.withdrawals[k] = { ...v, _path: 'withdrawals/' + k };
           }
         });
-        renderWithdrawalsTable();
-        renderRecentWithdrawals();
-        updateOverviewStats();
+        markTabDirty('withdrawals');
+        debounceRender('recentWdrs', renderRecentWithdrawals, 80);
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('deposits').on('value', (snap) => {
         adminState.deposits = snap.val() || {};
-        renderDepositsTable();
-        renderRecentDeposits();
-        updateOverviewStats();
+        markTabDirty('deposits');
+        debounceRender('recentDeps', renderRecentDeposits, 80);
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('promoCodes').on('value', (snap) => {
         adminState.promoCodes = snap.val() || {};
-        renderPromoGrid();
+        markTabDirty('promo');
       });
 
       fbDatabase.ref('supportTickets').on('value', (snap) => {
         adminState.tickets = snap.val() || {};
-        renderTicketsList();
-        updateOverviewStats();
+        markTabDirty('tickets');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('adminNotificationsSent').on('value', (snap) => {
         adminState.adminNotificationsSent = snap.val() || {};
-        renderSentNotificationsTable();
+        markTabDirty('notifications');
       });
 
       fbDatabase.ref('postbackLogs').on('value', (snap) => {
         adminState.postbackLogs = snap.val() || {};
-        renderPostbacksTable();
-        updateOverviewStats();
+        markTabDirty('postbacks');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
-      fbDatabase.ref('taskProofs').on('value', (snap) => {
+      // Optimized query: load last 50 proofs to avoid pulling 10MB base64 on entry
+      fbDatabase.ref('taskProofs').limitToLast(50).on('value', (snap) => {
         adminState.taskProofs = snap.val() || {};
-        renderTaskProofsTable();
-        updateOverviewStats();
+        markTabDirty('task_proofs');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
 
       fbDatabase.ref('referralLogs').on('value', (snap) => {
         adminState.referralLogs = snap.val() || {};
-        renderReferralLogsTable();
-        updateOverviewStats();
+        markTabDirty('referrals');
+        debounceRender('overviewStats', updateOverviewStats, 100);
       });
     }
 
@@ -1473,10 +1644,21 @@
       renderWithdrawalsTable();
     }
 
+    let wdrDisplayLimit = 50;
+
+    function loadMoreWithdrawals() {
+      wdrDisplayLimit += 50;
+      renderWithdrawalsTable();
+    }
+
+    function loadAllWithdrawals() {
+      wdrDisplayLimit = 999999;
+      renderWithdrawalsTable();
+    }
+
     function renderWithdrawalsTable() {
       const tbody = document.getElementById('admin-withdrawals-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
       const entries = Object.entries(adminState.withdrawals).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
 
       const filtered = entries.filter(([id, w]) => {
@@ -1491,7 +1673,8 @@
         return;
       }
 
-      filtered.forEach(([id, w]) => {
+      const displaySlice = filtered.slice(0, wdrDisplayLimit);
+      const rowsHtml = displaySlice.map(([id, w]) => {
         const pending = isPendingStatus(w.status);
         const approved = isApprovedStatus(w.status);
         const rejected = isRejectedStatus(w.status);
@@ -1499,40 +1682,67 @@
         const dateStr = w.timestamp ? new Date(w.timestamp).toLocaleString('bn-BD') : (w.date || '—');
         const coinsDeducted = w.coinsDeducted || (Number(w.amount) * 100);
 
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/60';
-        tr.innerHTML = `
-          <td class="p-3.5">
-            <div class="font-bold text-white">${w.userName || 'ব্যবহারকারী'}</div>
-            <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-              <span>${w.userPhone || ''}</span>
-              ${w.userPhone ? `
-                <button onclick="checkUserReferrals('${w.userPhone}')" class="text-[10px] text-amber-400 hover:underline bg-amber-500/10 px-1 py-0.5 rounded">রেফারেল চেক</button>
-              ` : ''}
-            </div>
-          </td>
-          <td class="p-3.5 font-bold text-slate-200">
-            <div class="text-xs">${w.method || 'bKash'}</div>
-            <div class="text-[11px] text-emerald-400 font-mono font-bold">${accNum}</div>
-          </td>
-          <td class="p-3.5 font-black text-rose-400 font-mono text-sm">৳${w.amount}</td>
-          <td class="p-3.5 font-mono text-amber-400 font-bold">${coinsDeducted.toLocaleString()} কয়েন</td>
-          <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
-          <td class="p-3.5">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${approved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : rejected ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
-              ${approved ? 'অনুমোদিত' : rejected ? 'বাতিল' : 'পেন্ডিং'}
-            </span>
-          </td>
-          <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-            ${pending ? `
-              <button onclick="approveWithdrawal('${id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">অনুমোদন</button>
-              <button onclick="rejectWithdrawal('${id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-800/40 text-rose-300 rounded-xl text-xs font-bold active:scale-95 transition-all">বাতিল ও রিফান্ড</button>
-            ` : `<span class="text-slate-500 text-[11px] font-semibold">${approved ? 'পরিশোধিত' : 'বাতিলকৃত'}</span>`}
-          </td>
+        return `
+          <tr class="hover:bg-slate-900/60">
+            <td class="p-3.5">
+              <div class="font-bold text-white">${w.userName || 'ব্যবহারকারী'}</div>
+              <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
+                <span>${w.userPhone || ''}</span>
+                ${w.userPhone ? `
+                  <button onclick="openWithdrawAuditModal('${id}', '${w.userPhone}')" class="text-[10px] text-amber-400 hover:text-amber-300 font-bold bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1" title="রেফারেল ও কাজের অডিট হিস্ট্রি দেখুন">
+                    <i data-lucide="shield-alert" class="w-3 h-3 text-amber-400"></i>
+                    <span>রেফার ও কাজ যাচাই</span>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+            <td class="p-3.5 font-bold text-slate-200">
+              <div class="text-xs">${w.method || 'bKash'}</div>
+              <div class="text-[11px] text-emerald-400 font-mono font-bold">${accNum}</div>
+            </td>
+            <td class="p-3.5 font-black text-rose-400 font-mono text-sm">৳${w.amount}</td>
+            <td class="p-3.5 font-mono text-amber-400 font-bold">${coinsDeducted.toLocaleString()} কয়েন</td>
+            <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
+            <td class="p-3.5">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${approved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : rejected ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                ${approved ? 'অনুমোদিত' : rejected ? 'বাতিল' : 'পেন্ডিং'}
+              </span>
+            </td>
+            <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="openWithdrawAuditModal('${id}', '${w.userPhone}')" class="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold active:scale-95 transition-all inline-flex items-center gap-1 shadow-sm" title="রেফারেল ও কাজের অডিট হিস্ট্রি দেখুন">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>অডিট ও হিস্ট্রি</span>
+              </button>
+              ${pending ? `
+                <button onclick="approveWithdrawal('${id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all">অনুমোদন</button>
+                <button onclick="rejectWithdrawal('${id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-800/40 text-rose-300 rounded-xl text-xs font-bold active:scale-95 transition-all">বাতিল ও রিফান্ড</button>
+              ` : `<span class="text-slate-500 text-[11px] font-semibold">${approved ? 'পরিশোধিত' : 'বাতিলকৃত'}</span>`}
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+
+      let footerHtml = '';
+      if (filtered.length > wdrDisplayLimit) {
+        footerHtml = `
+          <tr>
+            <td colspan="7" class="p-4 text-center bg-slate-900/90 border-t border-slate-800">
+              <div class="text-xs text-slate-400 mb-2 font-mono">মোট <b>${filtered.length.toLocaleString()}</b> টি উইথড্রয়ালের মধ্যে প্রথম <b>${displaySlice.length.toLocaleString()}</b> টি প্রদর্শিত হচ্ছে</div>
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="loadMoreWithdrawals()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                  আরও ৫০টি লোড করুন (+৫০)
+                </button>
+                <button onclick="loadAllWithdrawals()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                  সবগুলো দেখুন (${filtered.length})
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rowsHtml + footerHtml;
+      scheduleLucideIcons(tbody);
     }
 
     function approveWithdrawal(id) {
@@ -1579,10 +1789,310 @@
       }
     }
 
+    function openWithdrawAuditModal(wdrId, phone) {
+      const modal = document.getElementById('modal-withdraw-audit');
+      if (!modal) return;
+
+      const w = adminState.withdrawals[wdrId] || {};
+      const userKey = sanitizeKey(phone);
+
+      // Populate basic info
+      document.getElementById('audit-user-name').innerText = w.userName || 'ব্যবহারকারী';
+      document.getElementById('audit-user-phone').innerText = phone || '—';
+      document.getElementById('audit-wdr-amount').innerText = `৳${w.amount || 0}`;
+      document.getElementById('audit-wdr-coins').innerText = `${(w.coinsDeducted || (Number(w.amount || 0) * 100)).toLocaleString()} কয়েন কর্তন`;
+      document.getElementById('audit-wdr-method').innerText = `${w.method || 'bKash'}`;
+      document.getElementById('audit-wdr-account').innerText = w.accountNumber || w.account || '—';
+      document.getElementById('audit-wdr-date').innerText = w.timestamp ? new Date(w.timestamp).toLocaleString('bn-BD') : (w.date || '—');
+
+      const isPending = isPendingStatus(w.status);
+      const isApproved = isApprovedStatus(w.status);
+      const isRejected = isRejectedStatus(w.status);
+
+      const statusEl = document.getElementById('audit-wdr-status');
+      if (statusEl) {
+        statusEl.innerText = isApproved ? 'অনুমোদিত / পরিশোধিত' : isRejected ? 'বাতিলকৃত' : 'পেন্ডিং (অনুমোদন অপেক্ষা)';
+        statusEl.className = `inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold ${isApproved ? 'bg-emerald-500/20 text-emerald-300' : isRejected ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}`;
+      }
+
+      // Action buttons in modal footer
+      const actionBtns = document.getElementById('audit-action-btns');
+      if (actionBtns) {
+        actionBtns.innerHTML = `
+          ${isPending ? `
+            <button onclick="approveWithdrawal('${wdrId}'); closeAdminModal('modal-withdraw-audit');" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 active:scale-95 transition-all">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>উইথড্র অনুমোদন করুন (পেমেন্ট সম্পন্ন)</span>
+            </button>
+            <button onclick="rejectWithdrawal('${wdrId}'); closeAdminModal('modal-withdraw-audit');" class="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all">
+              <i data-lucide="x" class="w-4 h-4"></i>
+              <span>উইথড্র বাতিল ও রিফান্ড</span>
+            </button>
+          ` : ''}
+          <button onclick="closeAdminModal('modal-withdraw-audit')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold">
+            বন্ধ করুন
+          </button>
+        `;
+      }
+
+      const container = document.getElementById('audit-referrals-container');
+      const fraudCard = document.getElementById('audit-fraud-card');
+      const riskBadge = document.getElementById('audit-risk-badge');
+
+      if (container) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
+          <i data-lucide="loader" class="w-6 h-6 animate-spin text-amber-400"></i>
+          <span>রেফারেল ও কাজের হিস্ট্রি ডাটাবেজ থেকে লোড করা হচ্ছে...</span>
+        </div>`;
+        lucide.createIcons();
+      }
+
+      modal.classList.remove('hidden');
+
+      if (!isFirebaseReady || !fbDatabase) {
+        if (container) container.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">Firebase ডাটাবেজ সংযুক্ত নেই!</div>`;
+        return;
+      }
+
+      // Fetch user, their referralLogs and their referralWorkHistory
+      Promise.all([
+        fbDatabase.ref('users/' + userKey).once('value'),
+        fbDatabase.ref('referralLogs').orderByChild('referrerPhone').equalTo(phone).once('value'),
+        fbDatabase.ref('users/' + userKey + '/referralWorkHistory').limitToLast(150).once('value')
+      ]).then(([userSnap, logsSnap, workSnap]) => {
+        const uData = userSnap.val() || {};
+        const logsObj = logsSnap.val() || {};
+        const workHistObj = workSnap.val() || {};
+
+        // Group works by referredPhone
+        const memberMap = {};
+
+        // 1. Process referralLogs
+        Object.values(logsObj).forEach(log => {
+          if (!log) return;
+          const refPhone = log.referredPhone || log.id;
+          if (!memberMap[refPhone]) {
+            memberMap[refPhone] = {
+              phone: refPhone,
+              name: log.referredName || 'রেফার সদস্য',
+              joinDate: log.date || (log.timestamp ? new Date(log.timestamp).toLocaleDateString('bn-BD') : '—'),
+              joinTimestamp: log.timestamp || 0,
+              tasksCount: Number(log.tasksCompleted) || 0,
+              totalCoins: Number(log.userTotalCoins || log.lifetimeCoins || 0),
+              status: log.status || 'pending_5k',
+              works: [],
+              datesSet: new Set()
+            };
+          }
+        });
+
+        // 2. Process referralWorkHistory (every task completed by referred users)
+        Object.values(workHistObj).forEach(wItem => {
+          if (!wItem) return;
+          const refPhone = wItem.referredPhone || 'অজ্ঞাত';
+          if (!memberMap[refPhone]) {
+            memberMap[refPhone] = {
+              phone: refPhone,
+              name: wItem.referredName || 'রেফার সদস্য',
+              joinDate: '—',
+              joinTimestamp: wItem.timestamp || 0,
+              tasksCount: 0,
+              totalCoins: 0,
+              status: 'pending',
+              works: [],
+              datesSet: new Set()
+            };
+          }
+
+          const dateStr = wItem.timestamp ? new Date(wItem.timestamp).toLocaleDateString('bn-BD') : '—';
+          const timeStr = wItem.timestamp ? new Date(wItem.timestamp).toLocaleTimeString('bn-BD') : '';
+          memberMap[refPhone].datesSet.add(dateStr);
+          memberMap[refPhone].totalCoins = Math.max(memberMap[refPhone].totalCoins, Number(wItem.userTotalCoins) || 0);
+
+          memberMap[refPhone].works.push({
+            taskName: wItem.taskName || 'টাস্ক',
+            userEarned: Number(wItem.userEarned) || 0,
+            commissionEarned: Number(wItem.commissionEarned) || 0,
+            userTotalCoins: Number(wItem.userTotalCoins) || 0,
+            timestamp: wItem.timestamp || 0,
+            dateStr: dateStr,
+            timeStr: timeStr
+          });
+        });
+
+        const members = Object.values(memberMap);
+        members.forEach(m => {
+          m.works.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        });
+
+        // Count how many reached 5,000 coins
+        const completed5kMembers = members.filter(m => m.totalCoins >= 5000);
+        const count5k = completed5kMembers.length;
+        const totalJoined = members.length;
+        const required5k = Number(adminState.appSettings?.minRefsForWithdraw || 5);
+
+        // Update Pill
+        const pill = document.getElementById('audit-ref-count-pill');
+        if (pill) pill.innerText = `মোট রেফারেল: ${totalJoined} জন | ৫,০০০ কয়েন সম্পন্ন: ${count5k} জন`;
+
+        // Update Fraud Risk Assessment Card
+        const isLegit = count5k >= required5k;
+        if (riskBadge) {
+          riskBadge.innerText = isLegit ? `✅ শর্ত পূর্ণ (${count5k}/${required5k} জন)` : `⚠️ শর্ত অপূর্ণ (${count5k}/${required5k} জন)`;
+          riskBadge.className = `px-2.5 py-0.5 rounded-full text-[10px] font-black ${isLegit ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'}`;
+        }
+
+        if (fraudCard) {
+          if (isLegit) {
+            fraudCard.className = 'rounded-2xl p-4 border bg-emerald-950/30 border-emerald-500/40 text-emerald-300';
+            fraudCard.innerHTML = `
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="check-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-black text-sm text-white flex items-center gap-2">
+                    <span>পেমেন্ট নিরাপদ — সকল রেফারেল শর্ত পূরণ হয়েছে</span>
+                    <span class="px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-black text-[10px]">VERIFIED</span>
+                  </h4>
+                  <p class="text-xs text-emerald-300/90 mt-1 leading-relaxed">
+                    এই ইউজার কমপক্ষে <strong>${count5k} জন</strong> সক্রিয় রেফারেল যুক্ত করেছেন যাদের প্রত্যেকে অ্যাপে কাজ করে <strong>৫,০০০+ কয়েন</strong> ইনকাম করেছে। আপনি নিশ্চিন্তে উইথড্র অনুমোদন (Approve) করতে পারেন।
+                  </p>
+                </div>
+              </div>
+            `;
+          } else {
+            const needed = Math.max(0, required5k - count5k);
+            fraudCard.className = 'rounded-2xl p-4 border bg-rose-950/40 border-rose-500/50 text-rose-300';
+            fraudCard.innerHTML = `
+              <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-black text-sm text-white flex items-center gap-2">
+                    <span>⚠️ সতর্কতা: উইথড্র শর্ত অপূর্ণ — পেমেন্ট দিলে প্রতারিত হতে পারেন!</span>
+                    <span class="px-2 py-0.5 rounded bg-rose-500 text-white font-black text-[10px]">RISK ALERT</span>
+                  </h4>
+                  <p class="text-xs text-rose-200 mt-1 leading-relaxed">
+                    উইথড্র আনলক করার নিয়ম অনুযায়ী ইউজারের কমপক্ষে <strong>${required5k} জন</strong> ৫,০০০ কয়েন সম্পন্ন রেফারেল থাকতে হবে। কিন্তু এই ইউজারের মাত্র <strong>${count5k} জন</strong> রেফারেল ৫,০০০ কয়েন স্পর্শ করেছে (আরও <strong>${needed} জন</strong> প্রয়োজন)।<br>
+                    <span class="font-bold underline text-amber-300">সুপারিশ:</span> এই উইথড্র আবেদনটি <strong>বাতিল ও রিফান্ড</strong> করে ইউজারকে শর্ত পূরণ করতে বলুন।
+                  </p>
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        // Render Referral Cards with full task history
+        if (members.length === 0) {
+          container.innerHTML = `
+            <div class="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 text-center text-slate-400 text-xs">
+              <i data-lucide="user-x" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+              <span>এই ইউজারের কোনো রেফারেল রেকর্ড পাওয়া যায়নি। ইউজার হয়তো সরাসরি কোনো রেফারেল ছাড়াই কাজ করছে বা তথ্য সিঙ্ক হয়নি।</span>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        container.innerHTML = members.map((m, idx) => {
+          const is5kDone = m.totalCoins >= 5000;
+          const pct = Math.min(100, Math.floor((m.totalCoins / 5000) * 100));
+          const datesArr = Array.from(m.datesSet);
+          const worksCount = m.works.length;
+
+          return `
+            <div class="bg-slate-950 border ${is5kDone ? 'border-emerald-500/40 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl p-4 space-y-3 transition-all">
+              <!-- Member Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-xl ${is5kDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'} flex items-center justify-center font-black text-xs">
+                    ${idx + 1}
+                  </div>
+                  <div>
+                    <div class="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
+                      <span>${m.name}</span>
+                      <span class="px-2 py-0.2 rounded-md text-[9px] font-black ${is5kDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                        ${is5kDone ? '✓ ৫,০০০ কয়েন সম্পন্ন' : `পেন্ডিং (${Math.max(0, 5000 - m.totalCoins)} কয়েন বাকি)`}
+                      </span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-mono">
+                      <span>${m.phone}</span> · <span class="text-slate-500">যুক্ত: ${m.joinDate}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Coin Progress Gauge -->
+                <div class="sm:text-right">
+                  <div class="text-xs font-mono font-black ${is5kDone ? 'text-emerald-400' : 'text-amber-300'}">
+                    ${m.totalCoins.toLocaleString()} / ৫,০০০ কয়েন
+                  </div>
+                  <div class="w-36 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1 sm:ml-auto">
+                    <div class="h-full ${is5kDone ? 'bg-emerald-400' : 'bg-amber-400'} rounded-full transition-all" style="width: ${pct}%"></div>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-0.5">
+                    ${datesArr.length > 0 ? `${datesArr.length} দিন অ্যাপে কাজ করেছে` : 'কাজ হিস্ট্রি পেন্ডিং'}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Working Dates Summary -->
+              ${datesArr.length > 0 ? `
+                <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                  <span class="text-slate-400 font-bold flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3 h-3 text-cyan-400"></i> কাজের তারিখ সমূহ:
+                  </span>
+                  ${datesArr.map(d => `<span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-mono">${d}</span>`).join('')}
+                </div>
+              ` : ''}
+
+              <!-- Task By Task Detailed Breakdown Table -->
+              <div>
+                <div class="text-[11px] font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>যেসব কাজ থেকে কয়েন ইনকাম করেছে (${worksCount}টি কাজ রেকর্ড):</span>
+                  <span class="text-[10px] text-slate-500">লেটেস্ট কাজ সমূহ</span>
+                </div>
+
+                ${worksCount === 0 ? `
+                  <div class="p-3 bg-slate-900/60 rounded-xl text-center text-slate-500 text-[11px]">
+                    এই সদস্য এখনো কোনো কাজের সাবমিশন সম্পন্ন করেনি (অথবা পুরানো ইউজার)।
+                  </div>
+                ` : `
+                  <div class="max-h-48 overflow-y-auto space-y-1 rounded-xl bg-slate-900/80 border border-slate-800/80 p-2 scrollbar-none">
+                    ${m.works.slice(0, 30).map(w => `
+                      <div class="flex items-center justify-between text-[11px] p-1.5 rounded-lg hover:bg-slate-800/60 transition-colors">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <span class="w-1.5 h-1.5 rounded-full ${w.taskName.includes('৫,০০০') ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'} shrink-0"></span>
+                          <span class="text-slate-200 font-medium truncate">${w.taskName}</span>
+                          <span class="text-[10px] text-slate-500 font-mono shrink-0">${w.dateStr} ${w.timeStr}</span>
+                        </div>
+                        <div class="text-right shrink-0 ml-2 font-mono">
+                          <span class="text-emerald-400 font-bold">+${w.userEarned} কয়েন</span>
+                          ${w.userTotalCoins ? `<span class="text-slate-500 text-[10px] block">ব্যালেন্স: ${w.userTotalCoins.toLocaleString()}</span>` : ''}
+                        </div>
+                      </div>
+                    `).join('')}
+                    ${worksCount > 30 ? `<div class="text-center py-1 text-[10px] text-slate-500 font-mono">...আরও ${worksCount - 30}টি কাজের রেকর্ড রয়েছে...</div>` : ''}
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        lucide.createIcons();
+      }).catch(err => {
+        console.error('Audit fetch error:', err);
+        if (container) {
+          container.innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">অডিট ডাটা লোড করতে সমস্যা হয়েছে: ${err.message}</div>`;
+        }
+      });
+    }
+
     function renderDepositsTable() {
       const tbody = document.getElementById('admin-deposits-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
       const entries = Object.entries(adminState.deposits).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
 
       if (entries.length === 0) {
@@ -1590,39 +2100,38 @@
         return;
       }
 
-      entries.forEach(([id, d]) => {
+      tbody.innerHTML = entries.map(([id, d]) => {
         const pending = isPendingStatus(d.status);
         const approved = isApprovedStatus(d.status);
         const dateStr = d.timestamp ? new Date(d.timestamp).toLocaleString('bn-BD') : (d.date || '—');
 
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/60';
-        tr.innerHTML = `
-          <td class="p-3.5">
-            <div class="font-bold text-white">${d.userName || 'ব্যবহারকারী'}</div>
-            <div class="text-[11px] text-slate-400 font-mono">${d.userPhone || d.sender || ''}</div>
-          </td>
-          <td class="p-3.5">
-            <div class="font-bold text-slate-200 text-xs">${d.method || 'bKash'}</div>
-            <div class="text-[11px] text-cyan-400 font-mono font-bold">TrxID: ${d.trx || '—'}</div>
-          </td>
-          <td class="p-3.5 font-black text-emerald-400 font-mono text-sm">৳${d.amount}</td>
-          <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
-          <td class="p-3.5">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${approved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : pending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-              ${approved ? 'অনুমোদিত' : pending ? 'পেন্ডিং' : 'বাতিল'}
-            </span>
-          </td>
-          <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-            ${pending ? `
-              <button onclick="approveDeposit('${id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95">অনুমোদন</button>
-              <button onclick="rejectDeposit('${id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-bold active:scale-95">বাতিল</button>
-            ` : `<span class="text-slate-500 text-[11px] font-semibold">${approved ? 'সম্পন্ন' : 'বাতিল'}</span>`}
-          </td>
+        return `
+          <tr class="hover:bg-slate-900/60">
+            <td class="p-3.5">
+              <div class="font-bold text-white">${d.userName || 'ব্যবহারকারী'}</div>
+              <div class="text-[11px] text-slate-400 font-mono">${d.userPhone || d.sender || ''}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="font-bold text-slate-200 text-xs">${d.method || 'bKash'}</div>
+              <div class="text-[11px] text-cyan-400 font-mono font-bold">TrxID: ${d.trx || '—'}</div>
+            </td>
+            <td class="p-3.5 font-black text-emerald-400 font-mono text-sm">৳${d.amount}</td>
+            <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
+            <td class="p-3.5">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${approved ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : pending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+                ${approved ? 'অনুমোদিত' : pending ? 'পেন্ডিং' : 'বাতিল'}
+              </span>
+            </td>
+            <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              ${pending ? `
+                <button onclick="approveDeposit('${id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95">অনুমোদন</button>
+                <button onclick="rejectDeposit('${id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-300 rounded-xl text-xs font-bold active:scale-95">বাতিল</button>
+              ` : `<span class="text-slate-500 text-[11px] font-semibold">${approved ? 'সম্পন্ন' : 'বাতিল'}</span>`}
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+      scheduleLucideIcons(tbody);
     }
 
     function approveDeposit(id) {
@@ -1663,7 +2172,6 @@
     function renderTasksTable() {
       const tbody = document.getElementById('admin-tasks-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
       const taskEntries = Object.entries(adminState.tasks);
 
       if (taskEntries.length === 0) {
@@ -1677,40 +2185,39 @@
         once: { text: '🔒 ১ বার', class: 'bg-amber-500/20 text-amber-300' }
       };
 
-      taskEntries.forEach(([id, t]) => {
+      tbody.innerHTML = taskEntries.map(([id, t]) => {
         const freqInfo = freqLabels[t.frequency || 'daily'] || freqLabels.daily;
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/60 font-sans';
-        tr.innerHTML = `
-          <td class="p-3.5">
-            <div class="font-bold text-white flex items-center gap-1.5 flex-wrap">
-              <span>${t.title}</span>
-              <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${freqInfo.class}">${freqInfo.text}</span>
-              ${t.requiresProof ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">📸 প্রুফ আবশ্যক</span>' : ''}
-              ${(t.videoTutorialUrl || t.videoUrl) ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🎬 ভিডিও গাইড</span>' : ''}
-            </div>
-            <div class="text-[11px] text-slate-500 uppercase">${t.platform || 'website'}</div>
-          </td>
-          <td class="p-3.5 font-bold text-emerald-400 font-mono">+${t.rewardCoins || t.reward || 25}</td>
-          <td class="p-3.5 text-slate-300 font-mono">${t.duration || t.durationSeconds || 30}s</td>
-          <td class="p-3.5"><a href="${t.targetUrl || t.url || '#'}" target="_blank" class="text-sky-400 hover:underline truncate max-w-xs block font-mono text-[11px]">${t.targetUrl || t.url}</a></td>
-          <td class="p-3.5">
-            <button onclick="toggleTaskStatus('${id}', ${t.active !== false})" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.active !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
-              ${t.active !== false ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
-            </button>
-          </td>
-          <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-            <button onclick="openEditTaskModal('${id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs" title="এডিট">
-              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-            </button>
-            <button onclick="deleteTask('${id}')" class="p-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs" title="ডিলিট">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
-          </td>
+        return `
+          <tr class="hover:bg-slate-900/60 font-sans">
+            <td class="p-3.5">
+              <div class="font-bold text-white flex items-center gap-1.5 flex-wrap">
+                <span>${t.title}</span>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${freqInfo.class}">${freqInfo.text}</span>
+                ${t.requiresProof ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">📸 প্রুফ আবশ্যক</span>' : ''}
+                ${(t.videoTutorialUrl || t.videoUrl) ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">🎬 ভিডিও গাইড</span>' : ''}
+              </div>
+              <div class="text-[11px] text-slate-500 uppercase">${t.platform || 'website'}</div>
+            </td>
+            <td class="p-3.5 font-bold text-emerald-400 font-mono">+${t.rewardCoins || t.reward || 25}</td>
+            <td class="p-3.5 text-slate-300 font-mono">${t.duration || t.durationSeconds || 30}s</td>
+            <td class="p-3.5"><a href="${t.targetUrl || t.url || '#'}" target="_blank" class="text-sky-400 hover:underline truncate max-w-xs block font-mono text-[11px]">${t.targetUrl || t.url}</a></td>
+            <td class="p-3.5">
+              <button onclick="toggleTaskStatus('${id}', ${t.active !== false})" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.active !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+                ${t.active !== false ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+              </button>
+            </td>
+            <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="openEditTaskModal('${id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs" title="এডিট">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="deleteTask('${id}')" class="p-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs" title="ডিলিট">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+      scheduleLucideIcons(tbody);
     }
 
     // 5,000 COINS SYNCED REFERRAL AUDIT FUNCTIONS
@@ -1728,10 +2235,21 @@
       renderReferralLogsTable();
     }
 
+    let refLogsDisplayLimit = 50;
+
+    function loadMoreRefLogs() {
+      refLogsDisplayLimit += 50;
+      renderReferralLogsTable();
+    }
+
+    function loadAllRefLogs() {
+      refLogsDisplayLimit = 999999;
+      renderReferralLogsTable();
+    }
+
     function renderReferralLogsTable() {
       const tbody = document.getElementById('admin-referrals-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
 
       const logs = Object.entries(adminState.referralLogs || {}).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
 
@@ -1785,7 +2303,8 @@
         return;
       }
 
-      filtered.forEach(([id, l]) => {
+      const displaySlice = filtered.slice(0, refLogsDisplayLimit);
+      const rowsHtml = displaySlice.map(([id, l]) => {
         const earnedCoins = l.earnedCoins || 0;
         const isReal = l.is5kCompleted;
         const pct = Math.min(100, Math.round((earnedCoins / REFERRAL_COMPLETE_TARGET_COINS) * 100));
@@ -1794,55 +2313,75 @@
         const referredPhone = l.referredPhone || '—';
         const refUserObj = adminState.users[sanitizeKey(referrerPhone)] || {};
 
-        const tr = document.createElement('tr');
-        tr.className = `hover:bg-slate-900/60 font-sans ${!isReal ? 'bg-rose-950/10' : ''}`;
-        tr.innerHTML = `
-          <td class="p-3.5">
-            <div class="font-bold text-white">${l.referrerName || refUserObj.name || 'রেফারার'}</div>
-            <div class="text-[11px] text-amber-400 font-mono font-bold">${referrerPhone}</div>
-            <div class="text-[10px] text-slate-400">ব্যালেন্স: ${(refUserObj.coins || 0).toLocaleString()} | কমপ্লিট রেফার: ${refUserObj.referralsCount || 0}</div>
-          </td>
-          <td class="p-3.5">
-            <div class="font-bold text-slate-200">${l.referredName || l.referredUserObj?.name || 'রেফার ইউজার'}</div>
-            <div class="text-[11px] text-cyan-400 font-mono">${referredPhone}</div>
-          </td>
-          <td class="p-3.5">
-            <div class="space-y-1 max-w-[180px]">
-              <div class="flex items-center justify-between text-xs font-mono font-bold">
-                <span class="${isReal ? 'text-emerald-400' : 'text-amber-400'}">${earnedCoins.toLocaleString()} / ৫,০০০</span>
-                <span class="text-[10px] text-slate-400">${pct}%</span>
+        return `
+          <tr class="hover:bg-slate-900/60 font-sans ${!isReal ? 'bg-rose-950/10' : ''}">
+            <td class="p-3.5">
+              <div class="font-bold text-white">${l.referrerName || refUserObj.name || 'রেফারার'}</div>
+              <div class="text-[11px] text-amber-400 font-mono font-bold">${referrerPhone}</div>
+              <div class="text-[10px] text-slate-400">ব্যালেন্স: ${(refUserObj.coins || 0).toLocaleString()} | কমপ্লিট রেফার: ${refUserObj.referralsCount || 0}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="font-bold text-slate-200">${l.referredName || l.referredUserObj?.name || 'রেফার ইউজার'}</div>
+              <div class="text-[11px] text-cyan-400 font-mono">${referredPhone}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="space-y-1 max-w-[180px]">
+                <div class="flex items-center justify-between text-xs font-mono font-bold">
+                  <span class="${isReal ? 'text-emerald-400' : 'text-amber-400'}">${earnedCoins.toLocaleString()} / ৫,০০০</span>
+                  <span class="text-[10px] text-slate-400">${pct}%</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full ${isReal ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${pct}%"></div>
+                </div>
               </div>
-              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full ${isReal ? 'bg-emerald-500' : 'bg-amber-500'}" style="width: ${pct}%"></div>
-              </div>
-            </div>
-          </td>
-          <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
-          <td class="p-3.5">
-            ${isReal ? `
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> ✅ কমপ্লিট (৫,০০০+ কয়েন)
-              </span>
-            ` : `
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                <i data-lucide="clock" class="w-3 h-3 text-amber-400"></i> ⏳ অসম্পূর্ণ (${Math.max(0, REFERRAL_COMPLETE_TARGET_COINS - earnedCoins).toLocaleString()} বাকি)
-              </span>
-            `}
-          </td>
-          <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-            <button onclick="inspectReferrerUser('${referrerPhone}')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all">
-              রেফারার প্রোফাইল
-            </button>
-            ${!isReal ? `
-              <button onclick="penalizeFakeReferrer('${id}', '${referrerPhone}')" class="px-2.5 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-800/40 text-rose-300 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                বোনাস কর্তন
+            </td>
+            <td class="p-3.5 text-slate-400 text-[11px] font-mono">${dateStr}</td>
+            <td class="p-3.5">
+              ${isReal ? `
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> ✅ কমপ্লিট (৫,০০০+ কয়েন)
+                </span>
+              ` : `
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <i data-lucide="clock" class="w-3 h-3 text-amber-400"></i> ⏳ অসম্পূর্ণ (${Math.max(0, REFERRAL_COMPLETE_TARGET_COINS - earnedCoins).toLocaleString()} বাকি)
+                </span>
+              `}
+            </td>
+            <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="inspectReferrerUser('${referrerPhone}')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all">
+                রেফারার প্রোফাইল
               </button>
-            ` : ''}
-          </td>
+              ${!isReal ? `
+                <button onclick="penalizeFakeReferrer('${id}', '${referrerPhone}')" class="px-2.5 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-800/40 text-rose-300 rounded-xl text-xs font-bold active:scale-95 transition-all">
+                  বোনাস কর্তন
+                </button>
+              ` : ''}
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+
+      let footerHtml = '';
+      if (filtered.length > refLogsDisplayLimit) {
+        footerHtml = `
+          <tr>
+            <td colspan="6" class="p-4 text-center bg-slate-900/90 border-t border-slate-800">
+              <div class="text-xs text-slate-400 mb-2 font-mono">মোট <b>${filtered.length.toLocaleString()}</b> টি রেকর্ডের মধ্যে প্রথম <b>${displaySlice.length.toLocaleString()}</b> টি প্রদর্শিত হচ্ছে</div>
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="loadMoreRefLogs()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                  আরও ৫০টি লোড করুন (+৫০)
+                </button>
+                <button onclick="loadAllRefLogs()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                  সবগুলো দেখুন (${filtered.length})
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rowsHtml + footerHtml;
+      scheduleLucideIcons(tbody);
     }
 
     function inspectReferrerUser(phone) {
@@ -2037,7 +2576,6 @@
 
       const tbody = document.getElementById('adlinks-table-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
 
       const filtered = currentAdLinkCategory === 'all' 
         ? allLinks 
@@ -2048,31 +2586,30 @@
         return;
       }
 
-      filtered.forEach((l, index) => {
+      tbody.innerHTML = filtered.map((l, index) => {
         const cat = l.category || 'general';
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/60 font-sans';
-        tr.innerHTML = `
-          <td class="p-3 text-slate-500 font-mono text-[11px]">${index + 1}</td>
-          <td class="p-3 font-mono">
-            <div class="flex items-center gap-2 max-w-xs md:max-w-md">
-              <a href="${l.url}" target="_blank" class="text-cyan-400 hover:underline truncate text-xs" title="${l.url}">${l.url}</a>
-              <a href="${l.url}" target="_blank" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>
-            </div>
-          </td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-cyan-500/30 text-cyan-300 bg-cyan-500/10">${cat}</span></td>
-          <td class="p-3">
-            <button onclick="toggleAdLinkStatus('${l.id}', ${l.active !== false})" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${l.active !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
-              ${l.active !== false ? 'সক্রিয়' : 'বন্ধ'}
-            </button>
-          </td>
-          <td class="p-3 text-right">
-            <button onclick="deleteAdLink('${l.id}')" class="p-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-          </td>
+        return `
+          <tr class="hover:bg-slate-900/60 font-sans">
+            <td class="p-3 text-slate-500 font-mono text-[11px]">${index + 1}</td>
+            <td class="p-3 font-mono">
+              <div class="flex items-center gap-2 max-w-xs md:max-w-md">
+                <a href="${l.url}" target="_blank" class="text-cyan-400 hover:underline truncate text-xs" title="${l.url}">${l.url}</a>
+                <a href="${l.url}" target="_blank" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>
+              </div>
+            </td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border border-cyan-500/30 text-cyan-300 bg-cyan-500/10">${cat}</span></td>
+            <td class="p-3">
+              <button onclick="toggleAdLinkStatus('${l.id}', ${l.active !== false})" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${l.active !== false ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+                ${l.active !== false ? 'সক্রিয়' : 'বন্ধ'}
+              </button>
+            </td>
+            <td class="p-3 text-right">
+              <button onclick="deleteAdLink('${l.id}')" class="p-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs transition-all"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+      scheduleLucideIcons(tbody);
     }
 
     function toggleAdLinkStatus(id, currentActive) {
@@ -2117,10 +2654,21 @@
       filterUsersList();
     }
 
+    let userDisplayLimit = 50;
+
+    function loadMoreUsers() {
+      userDisplayLimit += 50;
+      renderUsersTable(document.getElementById('user-search-input')?.value.trim() || '');
+    }
+
+    function loadAllUsers() {
+      userDisplayLimit = 999999;
+      renderUsersTable(document.getElementById('user-search-input')?.value.trim() || '');
+    }
+
     function renderUsersTable(filter = '') {
       const tbody = document.getElementById('admin-users-tbody');
       if (!tbody) return;
-      tbody.innerHTML = '';
       const list = Object.values(adminState.users);
 
       const countAllEl = document.getElementById('user-count-all');
@@ -2143,44 +2691,65 @@
         return;
       }
 
-      filtered.forEach(u => {
+      const displaySlice = filtered.slice(0, userDisplayLimit);
+      const rowsHtml = displaySlice.map(u => {
         const refCount = u.referralsCount !== undefined ? u.referralsCount : (u.referralCount || 0);
         const totalJoinedRefs = u.totalJoinedReferrals || refCount;
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-900/60 font-sans';
-        tr.innerHTML = `
-          <td class="p-3.5">
-            <div class="font-bold text-white flex items-center gap-1.5">
-              <span>${u.name || 'ব্যবহারকারী'}</span>
-              ${u.isOnline ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : ''}
-            </div>
-            <div class="text-[11px] text-slate-400 font-mono">${u.phone}</div>
-            ${u.referredBy ? `<div class="text-[10px] text-amber-400 font-medium">রেফারার: ${u.referredBy}</div>` : ''}
-          </td>
-          <td class="p-3.5">
-            <div class="font-bold text-amber-400 font-mono">${(u.coins || 0).toLocaleString()} কয়েন</div>
-            <div class="text-[10px] text-slate-500 font-mono">লাইফটাইম: ${(u.lifetimeCoins || u.coins || 0).toLocaleString()}</div>
-          </td>
-          <td class="p-3.5 font-bold text-emerald-400 font-mono">৳${(u.cashBalance || 0).toFixed(2)}</td>
-          <td class="p-3.5 text-slate-300 font-mono font-bold">
-            <span class="text-emerald-400">${refCount} কমপ্লিট</span>
-            <span class="text-[10px] text-slate-500 block">মোট জয়েন: ${totalJoinedRefs} জন</span>
-          </td>
-          <td class="p-3.5">
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.banned ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
-              ${u.banned ? '⛔ ব্যান করা' : '✓ সক্রিয়'}
-            </span>
-          </td>
-          <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
-            <button onclick="openAdjustCoinsModal('${u.phone}')" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">কয়েন +/-</button>
-            <button onclick="openAdjustCashModal('${u.phone}')" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">৳ ফান্ড +/-</button>
-            <button onclick="toggleBanUser('${u.phone}', ${!!u.banned})" class="px-2.5 py-1 ${u.banned ? 'bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-700' : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800'} rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">${u.banned ? 'আনব্যান' : 'ব্যান'}</button>
-            <button onclick="deleteUserAccount('${u.phone}')" class="p-1 bg-rose-950/40 hover:bg-rose-900 text-rose-400 rounded-lg text-xs transition-all inline-flex items-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-          </td>
+        return `
+          <tr class="hover:bg-slate-900/60 font-sans">
+            <td class="p-3.5">
+              <div class="font-bold text-white flex items-center gap-1.5">
+                <span>${u.name || 'ব্যবহারকারী'}</span>
+                ${u.isOnline ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : ''}
+              </div>
+              <div class="text-[11px] text-slate-400 font-mono">${u.phone}</div>
+              ${u.referredBy ? `<div class="text-[10px] text-amber-400 font-medium">রেফারার: ${u.referredBy}</div>` : ''}
+            </td>
+            <td class="p-3.5">
+              <div class="font-bold text-amber-400 font-mono">${(u.coins || 0).toLocaleString()} কয়েন</div>
+              <div class="text-[10px] text-slate-500 font-mono">লাইফটাইম: ${(u.lifetimeCoins || u.coins || 0).toLocaleString()}</div>
+            </td>
+            <td class="p-3.5 font-bold text-emerald-400 font-mono">৳${(u.cashBalance || 0).toFixed(2)}</td>
+            <td class="p-3.5 text-slate-300 font-mono font-bold">
+              <span class="text-emerald-400">${refCount} কমপ্লিট</span>
+              <span class="text-[10px] text-slate-500 block">মোট জয়েন: ${totalJoinedRefs} জন</span>
+            </td>
+            <td class="p-3.5">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.banned ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+                ${u.banned ? '⛔ ব্যান করা' : '✓ সক্রিয়'}
+              </span>
+            </td>
+            <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="openAdjustCoinsModal('${u.phone}')" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">কয়েন +/-</button>
+              <button onclick="openAdjustCashModal('${u.phone}')" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">৳ ফান্ড +/-</button>
+              <button onclick="toggleBanUser('${u.phone}', ${!!u.banned})" class="px-2.5 py-1 ${u.banned ? 'bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-700' : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800'} rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">${u.banned ? 'আনব্যান' : 'ব্যান'}</button>
+              <button onclick="deleteUserAccount('${u.phone}')" class="p-1 bg-rose-950/40 hover:bg-rose-900 text-rose-400 rounded-lg text-xs transition-all inline-flex items-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
+      }).join('');
+
+      let footerHtml = '';
+      if (filtered.length > userDisplayLimit) {
+        footerHtml = `
+          <tr>
+            <td colspan="6" class="p-4 text-center bg-slate-900/90 border-t border-slate-800">
+              <div class="text-xs text-slate-400 mb-2 font-mono">মোট <b>${filtered.length.toLocaleString()}</b> জন ইউজারের মধ্যে প্রথম <b>${displaySlice.length.toLocaleString()}</b> জন প্রদর্শিত হচ্ছে</div>
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="loadMoreUsers()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                  আরও ৫০ জন লোড করুন (+৫০)
+                </button>
+                <button onclick="loadAllUsers()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                  সবাইকে দেখুন (${filtered.length})
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rowsHtml + footerHtml;
+      scheduleLucideIcons(tbody);
     }
 
     function filterUsersList() {
@@ -2543,6 +3112,31 @@
       if (imgEl) imgEl.style.transform = `scale(${curScreenshotZoom})`;
     }
 
+    let proofDisplayLimit = 30;
+
+    function loadMoreProofs() {
+      proofDisplayLimit += 30;
+      renderTaskProofsTable();
+    }
+
+    function loadAllProofs() {
+      proofDisplayLimit = 999999;
+      renderTaskProofsTable();
+    }
+
+    function loadAllArchiveTaskProofs() {
+      if (!isFirebaseReady || !fbDatabase) return alert('Firebase ডাটাবেজ সংযুক্ত নেই!');
+      showToast('আর্কাইভ থেকে সব প্রুফ ডাটা আনা হচ্ছে...');
+      fbDatabase.ref('taskProofs').once('value', (snap) => {
+        adminState.taskProofs = snap.val() || {};
+        renderTaskProofsTable();
+        updateOverviewStats();
+        showToast('✅ সকল আর্কাইভ প্রুফ সফলভাবে লোড হয়েছে!');
+      }).catch(err => {
+        alert('প্রুফ লোড ব্যর্থ: ' + err.message);
+      });
+    }
+
     function renderTaskProofsTable() {
       const tbody = document.getElementById('admin-proofs-tbody');
       if (!tbody) return;
@@ -2581,7 +3175,8 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map(p => {
+      const displaySlice = filtered.slice(0, proofDisplayLimit);
+      const rowsHtml = displaySlice.map(p => {
         const isPending = isPendingStatus(p.status);
         const isApproved = String(p.status).toLowerCase() === 'approved';
         const isRejected = String(p.status).toLowerCase() === 'rejected';
@@ -2634,7 +3229,28 @@
           </tr>
         `;
       }).join('');
-      lucide.createIcons();
+
+      let footerHtml = '';
+      if (filtered.length > proofDisplayLimit) {
+        footerHtml = `
+          <tr>
+            <td colspan="7" class="p-4 text-center bg-slate-900/90 border-t border-slate-800">
+              <div class="text-xs text-slate-400 mb-2 font-mono">মোট <b>${filtered.length.toLocaleString()}</b> টি প্রুফের মধ্যে প্রথম <b>${displaySlice.length.toLocaleString()}</b> টি প্রদর্শিত হচ্ছে</div>
+              <div class="flex items-center justify-center gap-2">
+                <button onclick="loadMoreProofs()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95">
+                  আরও ৩০টি প্রুফ লোড করুন (+৩০)
+                </button>
+                <button onclick="loadAllProofs()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                  সবগুলো দেখুন (${filtered.length})
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = rowsHtml + footerHtml;
+      scheduleLucideIcons(tbody);
     }
 
     function approveTaskProof(proofId) {
@@ -2718,6 +3334,9 @@
       const tg = document.getElementById('set-telegram-url');
       if (tg) tg.value = s.telegramUrl || 'https://t.me/taskcashpro';
 
+      const yt = document.getElementById('set-youtube-url');
+      if (yt) yt.value = s.youtubeUrl || '';
+
       const fb = document.getElementById('set-facebook-url');
       if (fb) fb.value = s.facebookUrl || '';
 
@@ -2795,6 +3414,7 @@
       const settingsData = {
         marqueeNotice: document.getElementById('set-marquee-notice').value.trim(),
         telegramUrl: document.getElementById('set-telegram-url').value.trim(),
+        youtubeUrl: (document.getElementById('set-youtube-url')?.value || '').trim(),
         facebookUrl: document.getElementById('set-facebook-url').value.trim(),
         coinsPerBdt: Number(document.getElementById('set-coins-per-bdt').value) || 100,
         minWithdrawBDT: Number(document.getElementById('set-min-withdraw').value) || 100,
@@ -2837,7 +3457,7 @@
     }
 
     window.onload = () => {
-      lucide.createIcons();
+      scheduleLucideIcons();
       if (sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true') {
         document.getElementById('admin-login-screen').classList.add('hidden');
         document.getElementById('admin-dashboard').classList.remove('hidden');
