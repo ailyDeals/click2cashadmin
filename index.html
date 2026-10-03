@@ -968,6 +968,12 @@
                   <span class="text-xs font-bold text-purple-300">উইথড্র করার জন্য ৫টি কমপ্লিট রেফারেল (৫,০০০+ কয়েন) বাধ্যতামূলক</span>
                 </label>
               </div>
+              <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800/80 space-y-2 md:col-span-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="set-require-timewall-withdraw" checked class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4">
+                  <span class="text-xs font-bold text-amber-300">🔒 উইথড্র করার জন্য প্রতিবার TimeWall থেকে ২,০০০ কয়েন ট্রান্সফার বাধ্যতামূলক (গোপন শর্ত)</span>
+                </label>
+              </div>
             </div>
           </div>
         </form>
@@ -1800,7 +1806,7 @@
       document.getElementById('audit-user-name').innerText = w.userName || 'ব্যবহারকারী';
       document.getElementById('audit-user-phone').innerText = phone || '—';
       document.getElementById('audit-wdr-amount').innerText = `৳${w.amount || 0}`;
-      document.getElementById('audit-wdr-coins').innerText = `${(w.coinsDeducted || (Number(w.amount || 0) * 100)).toLocaleString()} কয়েন কর্তন`;
+      document.getElementById('audit-wdr-coins').innerHTML = `${(w.coinsDeducted || (Number(w.amount || 0) * 100)).toLocaleString()} কয়েন কর্তন ${w.timewallTransferVerified ? '<span class="text-cyan-400 font-bold block text-[10px]">✓ TimeWall ২,০০০ কয়েন ট্রান্সফার যাচাইকৃত</span>' : ''}`;
       document.getElementById('audit-wdr-method').innerText = `${w.method || 'bKash'}`;
       document.getElementById('audit-wdr-account').innerText = w.accountNumber || w.account || '—';
       document.getElementById('audit-wdr-date').innerText = w.timestamp ? new Date(w.timestamp).toLocaleString('bn-BD') : (w.date || '—');
@@ -2708,6 +2714,7 @@
             <td class="p-3.5">
               <div class="font-bold text-amber-400 font-mono">${(u.coins || 0).toLocaleString()} কয়েন</div>
               <div class="text-[10px] text-slate-500 font-mono">লাইফটাইম: ${(u.lifetimeCoins || u.coins || 0).toLocaleString()}</div>
+              <div class="text-[10.5px] text-cyan-400 font-mono font-bold mt-0.5">TimeWall ট্রান্সফার: ${u.timewallTransfersAvailable || 0} বার</div>
             </td>
             <td class="p-3.5 font-bold text-emerald-400 font-mono">৳${(u.cashBalance || 0).toFixed(2)}</td>
             <td class="p-3.5 text-slate-300 font-mono font-bold">
@@ -2720,6 +2727,8 @@
               </span>
             </td>
             <td class="p-3.5 text-right space-x-1.5 whitespace-nowrap">
+              <button onclick="adjustUserTimeWallTransfer('${u.phone}', 1)" class="px-2 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all" title="TimeWall ট্রান্সফার অনুমোদন +১">+১ TW</button>
+              <button onclick="adjustUserTimeWallTransfer('${u.phone}', -1)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all" title="TimeWall ট্রান্সফার -১">-১ TW</button>
               <button onclick="openAdjustCoinsModal('${u.phone}')" class="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">কয়েন +/-</button>
               <button onclick="openAdjustCashModal('${u.phone}')" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">৳ ফান্ড +/-</button>
               <button onclick="toggleBanUser('${u.phone}', ${!!u.banned})" class="px-2.5 py-1 ${u.banned ? 'bg-emerald-900/80 hover:bg-emerald-800 text-emerald-300 border border-emerald-700' : 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800'} rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all">${u.banned ? 'আনব্যান' : 'ব্যান'}</button>
@@ -2812,6 +2821,25 @@
         }).then(() => {
           closeAdminModal('modal-user-cash');
           showToast(`ইউজার ক্যাম্পেইন ফান্ড টাকা (৳) সফলভাবে আপডেট হয়েছে!`);
+        });
+      }
+    }
+
+    function adjustUserTimeWallTransfer(phone, delta) {
+      if (!phone) return;
+      const userKey = sanitizeKey(phone);
+      if (isFirebaseReady && fbDatabase) {
+        fbDatabase.ref('users/' + userKey).transaction(user => {
+          if (user) {
+            const cur = Number(user.timewallTransfersAvailable) || 0;
+            user.timewallTransfersAvailable = Math.max(0, cur + delta);
+            if (delta > 0) {
+              user.timewallTotalApproved = (Number(user.timewallTotalApproved) || 0) + delta;
+            }
+          }
+          return user;
+        }).then(() => {
+          showToast(`ইউজার (${phone}) এর TimeWall ট্রান্সফার কাউন্ট সফলভাবে আপডেট হয়েছে!`);
         });
       }
     }
@@ -3279,12 +3307,24 @@
             const updatedLifetime = Math.max(Number(u.lifetimeCoins || 0) + addCoins, updatedCoins);
             const updatedToday = Number(u.todayCoins || 0) + addCoins;
 
-            fbDatabase.ref(`users/${userPhoneKey}`).update({
+            const isTimeWall = (p.taskId === 'timewall_special_task') || 
+                               (p.taskTitle && p.taskTitle.toLowerCase().includes('timewall'));
+
+            const updates = {
               coins: updatedCoins,
               lifetimeCoins: updatedLifetime,
               todayCoins: updatedToday,
               totalEarned: updatedLifetime
-            });
+            };
+
+            if (isTimeWall) {
+              const currentTw = Number(u.timewallTransfersAvailable || 0);
+              updates.timewallTransfersAvailable = currentTw + 1;
+              updates.timewallTotalApproved = (Number(u.timewallTotalApproved) || 0) + 1;
+              updates.timewallCoinsTransferred = (Number(u.timewallCoinsTransferred) || 0) + (addCoins >= 6000 ? 2000 : 1000);
+            }
+
+            fbDatabase.ref(`users/${userPhoneKey}`).update(updates);
 
             fbDatabase.ref(`users/${userPhoneKey}/coinHistory`).push({
               amount: addCoins,
@@ -3403,6 +3443,7 @@
 
       if (document.getElementById('set-ai-assistant-active')) document.getElementById('set-ai-assistant-active').checked = s.aiAssistantActive !== false;
       if (document.getElementById('set-require-ref-withdraw')) document.getElementById('set-require-ref-withdraw').checked = s.requireRefForWithdraw !== false;
+      if (document.getElementById('set-require-timewall-withdraw')) document.getElementById('set-require-timewall-withdraw').checked = s.requireTimewallForWithdraw !== false;
     }
 
     function saveAppSettingsFromForm() {
@@ -3446,6 +3487,7 @@
         rewardIdleChest: Number(document.getElementById('set-reward-idle-chest')?.value) || 200,
         aiAssistantActive: document.getElementById('set-ai-assistant-active')?.checked !== false,
         requireRefForWithdraw: document.getElementById('set-require-ref-withdraw')?.checked !== false,
+        requireTimewallForWithdraw: document.getElementById('set-require-timewall-withdraw')?.checked !== false,
         updatedAt: Date.now()
       };
 
