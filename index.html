@@ -157,6 +157,15 @@
           <span>প্রমো কোড</span>
         </button>
 
+
+        <button onclick="switchAdminTab('team_leaders')" class="admin-tab-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all text-left" data-tab="team_leaders">
+          <div class="flex items-center gap-3">
+            <i data-lucide="users-round" class="w-4 h-4 text-indigo-400"></i>
+            <span>টিম লিডার ম্যানেজমেন্ট</span>
+          </div>
+          <span id="badge-tl-count" class="px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-mono">০</span>
+        </button>
+
         <button onclick="switchAdminTab('settings')" class="admin-tab-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all text-left" data-tab="settings">
           <div class="flex items-center gap-3">
             <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
@@ -737,6 +746,80 @@
                 <tr><td colspan="7" class="p-6 text-center text-slate-500">কোনো প্রুফ জমা পড়েনি</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- TAB: TEAM LEADERS -->
+      <section id="admin-view-team_leaders" class="space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <i data-lucide="users-round" class="w-6 h-6 text-indigo-400"></i> টিম লিডার ম্যানেজমেন্ট
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">লিডার রিকোয়েস্ট, দৈনিক প্রুফ অ্যাপ্রুভ/রিজেক্ট, টিম স্ট্যাটাস ও সেলারি কন্ট্রোল</p>
+          </div>
+        </div>
+
+        <!-- Settings quick -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold">ম্যাক্স মেম্বার/টিম</label>
+            <input type="number" id="tl-set-max-members" value="10" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold">দৈনিক কয়েন টার্গেট</label>
+            <input type="number" id="tl-set-daily-coins" value="3000" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold">সাপ্তাহিক ফুল সেলারি (৳)</label>
+            <input type="number" id="tl-set-weekly-full" value="700" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold">সাপ্তাহিক মাঝারি (৳)</label>
+            <input type="number" id="tl-set-weekly-mid" value="450" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+          </div>
+          <div class="col-span-2 sm:col-span-2">
+            <label class="text-[10px] text-slate-400 font-bold">মেম্বার প্রুফ অ্যাপ্রুভ বোনাস (কয়েন)</label>
+            <input type="number" id="tl-set-member-reward" value="300" class="w-full mt-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+            <p class="text-[9px] text-slate-500 mt-1">প্রতিটি অ্যাপ্রুভড টিম প্রুফে ইউজার অ্যাপ ওয়ালেটে এত কয়েন পাবে</p>
+          </div>
+          <div class="col-span-2 sm:col-span-4">
+            <button onclick="saveTeamLeaderSettings()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl active:scale-95">টিম সেটিংস সেভ করুন</button>
+          </div>
+        </div>
+
+        <!-- Pending Leader Requests -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="user-plus" class="w-4 h-4 text-amber-400"></i> পেন্ডিং টিম লিডার রিকোয়েস্ট
+          </h3>
+          <div id="admin-tl-requests-list" class="space-y-2 text-xs">
+            <div class="text-slate-500 text-center py-4">লোড হচ্ছে...</div>
+          </div>
+        </div>
+
+        <!-- Daily Reports -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4 text-rose-400"></i> দৈনিক টিম প্রুফ (অ্যাপ্রুভ/রিজেক্ট)
+            </h3>
+            <button onclick="loadAdminTeamReports()" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-[10px] font-bold">রিফ্রেশ</button>
+          </div>
+          <div id="admin-tl-reports-list" class="space-y-2 max-h-[500px] overflow-y-auto text-xs">
+            <div class="text-slate-500 text-center py-4">লোড হচ্ছে...</div>
+          </div>
+        </div>
+
+        <!-- Active Teams -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> সক্রিয় টিম সমূহ
+          </h3>
+          <div id="admin-tl-teams-list" class="space-y-2 text-xs">
+            <div class="text-slate-500 text-center py-4">লোড হচ্ছে...</div>
           </div>
         </div>
       </section>
@@ -1438,6 +1521,7 @@
         if (el) el.classList.add('hidden');
       });
       const activeEl = document.getElementById(`admin-view-${tabId}`);
+      if (tabId === 'team_leaders' && typeof loadAdminTeamLeaderData === 'function') loadAdminTeamLeaderData();
       if (activeEl) activeEl.classList.remove('hidden');
 
       document.querySelectorAll('.admin-tab-btn').forEach(btn => {
@@ -3495,6 +3579,207 @@
         showToast('✅ অ্যাপ ও পেমেন্ট সেটিংস সফলভাবে সেভ হয়েছে!');
       }).catch(err => {
         alert('ত্রুটি: ' + err.message);
+      });
+    }
+
+
+    // ========== TEAM LEADER ADMIN ==========
+    function saveTeamLeaderSettings() {
+      if (!isFirebaseReady || !fbDatabase) return alert('Firebase নেই');
+      const data = {
+        teamMaxMembers: Number(document.getElementById('tl-set-max-members')?.value || 10),
+        teamDailyCoinsRequired: Number(document.getElementById('tl-set-daily-coins')?.value || 3000),
+        teamLeaderWeeklyFull: Number(document.getElementById('tl-set-weekly-full')?.value || 700),
+        teamLeaderWeeklyMid: Number(document.getElementById('tl-set-weekly-mid')?.value || 450),
+        teamMemberProofRewardCoins: Number(document.getElementById('tl-set-member-reward')?.value || 300),
+        teamLeaderEnabled: true,
+        updatedAt: Date.now()
+      };
+      fbDatabase.ref('appSettings').update(data).then(() => showToast('✅ টিম লিডার সেটিংস সেভ হয়েছে!'));
+    }
+
+    function loadAdminTeamLeaderData() {
+      if (!isFirebaseReady || !fbDatabase) return;
+      // Load settings into form
+      const s = adminState.appSettings || {};
+      if (document.getElementById('tl-set-max-members')) document.getElementById('tl-set-max-members').value = s.teamMaxMembers || 10;
+      if (document.getElementById('tl-set-daily-coins')) document.getElementById('tl-set-daily-coins').value = s.teamDailyCoinsRequired || 3000;
+      if (document.getElementById('tl-set-weekly-full')) document.getElementById('tl-set-weekly-full').value = s.teamLeaderWeeklyFull || 700;
+      if (document.getElementById('tl-set-weekly-mid')) document.getElementById('tl-set-weekly-mid').value = s.teamLeaderWeeklyMid || 450;
+      if (document.getElementById('tl-set-member-reward')) document.getElementById('tl-set-member-reward').value = s.teamMemberProofRewardCoins || 300;
+
+      // Pending requests
+      fbDatabase.ref('teamLeaderRequests').once('value', snap => {
+        const val = snap.val() || {};
+        const list = Object.entries(val).map(([id, r]) => ({ id, ...r })).filter(r => r.status === 'pending').sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+        const el = document.getElementById('admin-tl-requests-list');
+        const badge = document.getElementById('badge-tl-count');
+        if (badge) badge.innerText = list.length;
+        if (!el) return;
+        if (list.length === 0) {
+          el.innerHTML = '<div class="text-slate-500 text-center py-4">কোনো পেন্ডিং রিকোয়েস্ট নেই</div>';
+        } else {
+          el.innerHTML = list.map(r => `
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="font-bold text-white">${r.userName || 'N/A'}</div>
+                <div class="text-[11px] text-slate-400 font-mono">${r.userPhone} · পেমেন্ট: ${r.paymentNumber}</div>
+                <div class="text-[10px] text-slate-500">টিম: ${r.teamName || '—'} · ${r.timestamp ? new Date(r.timestamp).toLocaleString('bn-BD') : ''}</div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="approveTeamLeader('${r.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold">অ্যাপ্রুভ</button>
+                <button onclick="rejectTeamLeader('${r.id}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold">রিজেক্ট</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      });
+
+      loadAdminTeamReports();
+      loadAdminTeamsList();
+    }
+
+    function approveTeamLeader(reqId) {
+      if (!confirm('এই ইউজারকে টিম লিডার অ্যাপ্রুভ করবেন?')) return;
+      fbDatabase.ref('teamLeaderRequests/' + reqId).once('value', snap => {
+        const r = snap.val();
+        if (!r) return;
+        const teamCode = 'TL' + String(r.userPhone).slice(-4) + Math.random().toString(36).slice(2, 4).toUpperCase();
+        const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
+        const userKey = sanitizeKey(r.userPhone);
+        const maxM = Number(adminState.appSettings?.teamMaxMembers || 10);
+
+        fbDatabase.ref('teams/' + teamId).set({
+          teamId,
+          teamCode,
+          teamName: r.teamName || (r.userName + ' টিম'),
+          leaderPhone: r.userPhone,
+          leaderName: r.userName,
+          paymentNumber: r.paymentNumber,
+          members: {},
+          maxMembers: maxM,
+          createdAt: Date.now()
+        });
+        fbDatabase.ref('users/' + userKey).update({
+          isTeamLeader: true,
+          teamId,
+          teamCode,
+          teamPaymentNumber: r.paymentNumber
+        });
+        fbDatabase.ref('teamLeaderRequests/' + reqId).update({ status: 'approved', approvedAt: Date.now(), teamId, teamCode });
+        showToast('✅ টিম লিডার অ্যাপ্রুভড! কোড: ' + teamCode);
+        loadAdminTeamLeaderData();
+      });
+    }
+
+    function rejectTeamLeader(reqId) {
+      const reason = prompt('রিজেক্টের কারণ:', 'শর্ত পূরণ হয়নি');
+      if (reason === null) return;
+      fbDatabase.ref('teamLeaderRequests/' + reqId).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now() });
+      showToast('রিকোয়েস্ট রিজেক্ট করা হয়েছে');
+      loadAdminTeamLeaderData();
+    }
+
+    function loadAdminTeamReports() {
+      if (!isFirebaseReady || !fbDatabase) return;
+      fbDatabase.ref('teamDailyReportsList').limitToLast(50).once('value', snap => {
+        const val = snap.val() || {};
+        const list = Object.entries(val).map(([k, r]) => ({ key: k, ...r })).sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+        const el = document.getElementById('admin-tl-reports-list');
+        if (!el) return;
+        if (list.length === 0) {
+          el.innerHTML = '<div class="text-slate-500 text-center py-4">কোনো প্রুফ নেই</div>';
+          return;
+        }
+        el.innerHTML = list.map(r => {
+          const isPending = r.status === 'pending';
+          const statusBadge = r.status === 'approved' ? '<span class="text-emerald-400 font-bold">অ্যাপ্রুভড</span>' :
+            r.status === 'rejected' ? '<span class="text-rose-400 font-bold">রিজেক্ট</span>' :
+            '<span class="text-amber-400 font-bold">পেন্ডিং</span>';
+          const img = r.screenshotBase64 ? `<img src="${r.screenshotBase64}" class="w-14 h-14 object-cover rounded-lg border border-slate-700 cursor-pointer" onclick="window.open(this.src)">` : '';
+          return `<div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row gap-3">
+            <div class="shrink-0">${img}</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-white">${r.userName || 'N/A'} ${r.isLeader ? '<span class="text-indigo-400 text-[10px]">(লিডার)</span>' : ''}</div>
+              <div class="text-[11px] text-slate-400 font-mono">${r.userPhone} · ${r.coins || 0} কয়েন · ${r.date || ''}</div>
+              <div class="text-[10px] text-slate-500">${statusBadge} · ${r.timestamp ? new Date(r.timestamp).toLocaleString('bn-BD') : ''}</div>
+            </div>
+            <div class="flex gap-2 items-start">
+              ${isPending ? `
+                <button onclick="approveTeamReport('${r.key}', '${r.userPhone}', '${r.date}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold">অ্যাপ্রুভ</button>
+                <button onclick="rejectTeamReport('${r.key}', '${r.userPhone}', '${r.date}')" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-bold">রিজেক্ট</button>
+              ` : '<span class="text-[10px] text-slate-500">নিষ্পন্ন</span>'}
+            </div>
+          </div>`;
+        }).join('');
+      });
+    }
+
+    function approveTeamReport(listKey, userPhone, date) {
+      if (!confirm('এই প্রুফ অ্যাপ্রুভ করবেন? ইউজার অ্যাপ ওয়ালেটে বোনাস কয়েন পাবে।')) return;
+      const userKey = sanitizeKey(userPhone);
+      const rewardCoins = Number(adminState.appSettings?.teamMemberProofRewardCoins || 300);
+
+      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins });
+      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins });
+
+      // Award coins to user wallet
+      if (userKey && rewardCoins > 0) {
+        fbDatabase.ref('users/' + userKey).once('value', snap => {
+          const u = snap.val();
+          if (u) {
+            const currentCoins = Number(u.coins || 0);
+            const updatedCoins = currentCoins + rewardCoins;
+            const updatedLifetime = Math.max(Number(u.lifetimeCoins || 0) + rewardCoins, updatedCoins);
+            const updatedToday = Number(u.todayCoins || 0) + rewardCoins;
+            fbDatabase.ref('users/' + userKey).update({
+              coins: updatedCoins,
+              lifetimeCoins: updatedLifetime,
+              todayCoins: updatedToday
+            });
+            fbDatabase.ref('users/' + userKey + '/coinHistory').push({
+              amount: rewardCoins,
+              reason: 'টিম দৈনিক প্রুফ বোনাস (' + date + ')',
+              timestamp: Date.now(),
+              type: 'credit'
+            });
+          }
+        });
+      }
+
+      showToast('✅ টিম প্রুফ অ্যাপ্রুভড! ইউজার +' + rewardCoins + ' কয়েন পেয়েছে');
+      loadAdminTeamReports();
+    }
+
+    function rejectTeamReport(listKey, userPhone, date) {
+      const reason = prompt('রিজেক্টের কারণ:', 'স্ক্রিনশট স্পষ্ট নয়');
+      if (reason === null) return;
+      const userKey = sanitizeKey(userPhone);
+      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now() });
+      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now() });
+      showToast('প্রুফ রিজেক্ট করা হয়েছে');
+      loadAdminTeamReports();
+    }
+
+    function loadAdminTeamsList() {
+      if (!isFirebaseReady || !fbDatabase) return;
+      fbDatabase.ref('teams').once('value', snap => {
+        const val = snap.val() || {};
+        const list = Object.entries(val).map(([id, t]) => ({ id, ...t }));
+        const el = document.getElementById('admin-tl-teams-list');
+        if (!el) return;
+        if (list.length === 0) {
+          el.innerHTML = '<div class="text-slate-500 text-center py-4">কোনো টিম নেই</div>';
+          return;
+        }
+        el.innerHTML = list.map(t => {
+          const mCount = Object.keys(t.members || {}).length;
+          return `<div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="font-bold text-white">${t.teamName || t.teamCode} <span class="text-indigo-400 font-mono text-xs">${t.teamCode}</span></div>
+            <div class="text-[11px] text-slate-400">লিডার: ${t.leaderName || ''} (${t.leaderPhone}) · মেম্বার: ${mCount}/${t.maxMembers || 10}</div>
+            <div class="text-[10px] text-slate-500">পেমেন্ট: ${t.paymentNumber || '—'}</div>
+          </div>`;
+        }).join('');
       });
     }
 
