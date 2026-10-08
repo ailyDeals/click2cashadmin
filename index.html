@@ -3891,7 +3891,7 @@
               <div class="text-[11px] text-slate-400">লিডার: ${t.leaderName || ''} (${t.leaderPhone}) · পেমেন্ট নম্বর: <span class="text-emerald-400 font-mono font-bold">${t.paymentNumber || '—'}</span></div>
             </div>
             <div class="text-[11px] sm:text-right space-y-0.5">
-              <div class="text-slate-300">মেম্বার: <b>${mk.length}/${t.maxMembers || 10}</b></div>
+              <div class="text-slate-300">মেম্বার: <b>${mk.length}/${Number(st.teamMaxMembers || 10)}</b></div>
               <div>স্ল্যাব: <b class="text-emerald-400">${tier ? tier.members + '+ জন' : 'নেই (মেম্বার কম)'}</b> · মাসিক <b class="text-amber-400">৳${tier ? tier.monthly : 0}</b> · ৭ দিনে <b class="text-emerald-400">৳${tier ? tier.weekly : 0}</b></div>
             </div>
           </div>
