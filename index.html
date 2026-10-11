@@ -882,6 +882,11 @@
               <input type="url" id="set-telegram-url" placeholder="https://t.me/your_channel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-sky-400 font-mono focus:outline-none focus:border-sky-500">
             </div>
             <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">টেলিগ্রাম মিনি অ্যাপ লিংক (রেফার লিংকের জন্য):</label>
+              <input type="url" id="set-telegram-app-url" placeholder="https://t.me/taskcashpro33_bot/app" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-sky-400 font-mono focus:outline-none focus:border-sky-500">
+              <span class="text-[10px] text-slate-500 mt-0.5 block">রেফার লিংক হবে: এই লিংক + ?startapp=কোড। ফাঁকা রাখলে অ্যাপের ডিফল্ট ব্যবহার হবে।</span>
+            </div>
+            <div>
               <label class="block text-xs font-bold text-slate-300 mb-1.5">অফিশিয়াল ইউটিউব চ্যানেল/ভিডিও গাইড লিংক:</label>
               <input type="url" id="set-youtube-url" placeholder="https://youtube.com/@your_channel" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-rose-400 font-mono focus:outline-none focus:border-rose-500">
             </div>
@@ -993,6 +998,12 @@
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" id="set-require-channel-join" checked class="rounded text-sky-600 w-4 h-4">
                 <span class="text-xs font-bold text-sky-300">টেলিগ্রাম চ্যানেলে জয়েন বাধ্যতামূলক (ইউজার নিজে নিশ্চিত করে, অটো যাচাই নয়)</span>
+              </label>
+            </div>
+            <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800/80">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="set-disable-default-tasks" class="rounded text-rose-600 w-4 h-4">
+                <span class="text-xs font-bold text-rose-300">অ্যাপের ৫টি ডিফল্ট টাস্ক লুকান (শুধু আপনার তৈরি টাস্ক দেখাবে)</span>
               </label>
             </div>
           </div>
@@ -3546,6 +3557,8 @@
 
       const tg = document.getElementById('set-telegram-url');
       if (tg) tg.value = s.telegramUrl || 'https://t.me/taskcashpro';
+      const tgApp = document.getElementById('set-telegram-app-url');
+      if (tgApp) tgApp.value = s.telegramAppUrl || '';
 
       const yt = document.getElementById('set-youtube-url');
       if (yt) yt.value = s.youtubeUrl || '';
@@ -3603,6 +3616,7 @@
       if (document.getElementById('set-timewall-min-redeem')) document.getElementById('set-timewall-min-redeem').value = s.timewallMinRedeem || 1000;
       if (document.getElementById('set-timewall-video-url')) document.getElementById('set-timewall-video-url').value = s.timewallVideoUrl || '';
       if (document.getElementById('set-require-channel-join')) document.getElementById('set-require-channel-join').checked = s.requireChannelJoin !== false;
+      if (document.getElementById('set-disable-default-tasks')) document.getElementById('set-disable-default-tasks').checked = !!s.disableDefaultTasks;
 
       if (document.getElementById('set-reward-unlock-extra')) document.getElementById('set-reward-unlock-extra').value = s.rewardUnlockExtra ?? 200;
       if (document.getElementById('set-reward-watch-ad')) document.getElementById('set-reward-watch-ad').value = s.rewardWatchAd ?? 200;
@@ -3631,6 +3645,7 @@
       const settingsData = {
         marqueeNotice: document.getElementById('set-marquee-notice').value.trim(),
         telegramUrl: document.getElementById('set-telegram-url').value.trim(),
+        telegramAppUrl: (document.getElementById('set-telegram-app-url')?.value || '').trim(),
         youtubeUrl: (document.getElementById('set-youtube-url')?.value || '').trim(),
         facebookUrl: document.getElementById('set-facebook-url').value.trim(),
         coinsPerBdt: Number(document.getElementById('set-coins-per-bdt').value) || 100,
@@ -3648,6 +3663,7 @@
         timewallMinRedeem: Number(document.getElementById('set-timewall-min-redeem')?.value) || 1000,
         timewallVideoUrl: (document.getElementById('set-timewall-video-url')?.value || '').trim(),
         requireChannelJoin: document.getElementById('set-require-channel-join')?.checked !== false,
+        disableDefaultTasks: !!document.getElementById('set-disable-default-tasks')?.checked,
         dailySpinsLimit: Number(document.getElementById('set-daily-spins').value) || 50,
         dailyScratchLimit: Number(document.getElementById('set-daily-scratch').value) || 50,
         dailyCaptchaLimit: Number(document.getElementById('set-daily-captcha').value) || 50,
