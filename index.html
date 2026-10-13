@@ -720,6 +720,7 @@
               <button onclick="filterTaskProofs('all')" id="proof-filter-all" class="proof-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800 text-xs font-bold">
                 সকল
               </button>
+              <button onclick="cleanupOldProofScreenshots()" class="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold hover:bg-rose-500/30 transition-all flex items-center gap-1.5" title="অ্যাপ্রুভড/রিজেক্টেড প্রুফের ভারি ছবি মুছুন"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>পুরোনো ছবি মুছুন</span></button>
               <button onclick="loadAllArchiveTaskProofs()" id="btn-load-archive-proofs" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold hover:bg-indigo-500/30 transition-all flex items-center gap-1.5" title="পুরোনো সকল প্রুফ ডাটাবেজ থেকে লোড করুন">
                 <i data-lucide="archive" class="w-3.5 h-3.5"></i>
                 <span>আর্কাইভ প্রুফ লোড</span>
@@ -993,6 +994,15 @@
             <div>
               <label class="block text-xs font-bold text-slate-300 mb-1">TimeWall কাজের নিয়ম ভিডিও লিংক (ইউটিউব/টেলিগ্রাম):</label>
               <input type="url" id="set-timewall-video-url" placeholder="https://youtube.com/watch?v=..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-sky-400 font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">প্রতিবার উইথড্রের জন্য TimeWall থেকে রিডিম (কয়েন):</label>
+              <input type="number" id="set-timewall-withdraw-coins" min="100" value="2000" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-amber-400 font-mono font-bold">
+              <span class="text-[10px] text-slate-500 mt-0.5 block">ইউজারের অ্যাপ্রুভড রিডিম জমে এই পরিমাণ হলে একটি উইথড্র আনলক হয়।</span>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">টিম প্রুফ জমার নিয়ম (ইউজারের ফর্মে দেখাবে):</label>
+              <textarea id="set-team-proof-note" rows="3" placeholder="যেমন: ১) TimeWall এ কাজ করে কয়েন রিডিম করুন... ২) ..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white leading-relaxed"></textarea>
             </div>
             <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800/80">
               <label class="flex items-center gap-2 cursor-pointer">
@@ -1728,8 +1738,16 @@
       });
 
       // Optimized query: load last 50 proofs to avoid pulling 10MB base64 on entry
-      fbDatabase.ref('taskProofs').limitToLast(50).on('value', (snap) => {
-        adminState.taskProofs = snap.val() || {};
+      const tpRef = fbDatabase.ref('taskProofs').limitToLast(50);
+      const tpSet = (s) => {
+        adminState.taskProofs[s.key] = s.val();
+        markTabDirty('task_proofs');
+        debounceRender('overviewStats', updateOverviewStats, 100);
+      };
+      tpRef.on('child_added', tpSet);
+      tpRef.on('child_changed', tpSet);
+      tpRef.on('child_removed', (s) => {
+        delete adminState.taskProofs[s.key];
         markTabDirty('task_proofs');
         debounceRender('overviewStats', updateOverviewStats, 100);
       });
@@ -3336,6 +3354,46 @@
       renderTaskProofsTable();
     }
 
+    async function cleanupOldProofScreenshots() {
+      if (!isFirebaseReady || !fbDatabase) return alert('Firebase ডাটাবেজ সংযুক্ত নেই!');
+      if (!confirm('অ্যাপ্রুভড ও রিজেক্টেড সব প্রুফের ভারি স্ক্রিনশট ছবি ফায়ারবেস থেকে মুছে ফেলবেন?\n\nরেকর্ড (নাম, ফোন, তারিখ, টাস্ক, স্ট্যাটাস) থেকে যাবে। পেন্ডিং প্রুফ ছোঁয়া হবে না। এটা ফেরানো যাবে না।')) return;
+      showToast('পুরোনো ছবি খোঁজা হচ্ছে...');
+      try {
+        const upd = {};
+        let n = 0;
+        const tp = (await fbDatabase.ref('taskProofs').once('value')).val() || {};
+        Object.entries(tp).forEach(([id, p]) => {
+          if (p && p.screenshotBase64 && !isPendingStatus(p.status)) {
+            upd['taskProofs/' + id + '/screenshotBase64'] = null;
+            upd['taskProofs/' + id + '/screenshotDeleted'] = true;
+            n++;
+          }
+        });
+        const tl = (await fbDatabase.ref('teamDailyReportsList').once('value')).val() || {};
+        Object.entries(tl).forEach(([k, r]) => {
+          if (r && r.screenshotBase64 && !isPendingStatus(r.status)) {
+            upd['teamDailyReportsList/' + k + '/screenshotBase64'] = null;
+            upd['teamDailyReportsList/' + k + '/screenshotDeleted'] = true;
+            if (r.userPhone && r.date) {
+              const base = 'dailyTeamReports/' + sanitizeKey(r.userPhone) + '/' + r.date;
+              upd[base + '/screenshotBase64'] = null;
+              upd[base + '/screenshotDeleted'] = true;
+            }
+            n++;
+          }
+        });
+        const keys = Object.keys(upd);
+        for (let i = 0; i < keys.length; i += 300) {
+          const chunk = {};
+          keys.slice(i, i + 300).forEach(k => { chunk[k] = upd[k]; });
+          await fbDatabase.ref().update(chunk);
+        }
+        showToast('✅ ' + n + 'টি প্রুফের ছবি মুছে ফেলা হয়েছে!');
+      } catch (err) {
+        alert('মুছতে সমস্যা হয়েছে: ' + err.message);
+      }
+    }
+
     function loadAllArchiveTaskProofs() {
       if (!isFirebaseReady || !fbDatabase) return alert('Firebase ডাটাবেজ সংযুক্ত নেই!');
       showToast('আর্কাইভ থেকে সব প্রুফ ডাটা আনা হচ্ছে...');
@@ -3412,7 +3470,7 @@
                 </button>
               </div>
              </div>`
-          : `<span class="text-slate-500 italic text-[11px]">কোনো ছবি নেই</span>`;
+          : (p.screenshotDeleted ? `<span class="text-slate-500 text-[11px]">🗑️ ছবি মুছে ফেলা হয়েছে<br><span class="text-[10px] text-slate-600">(ফায়ারবেস স্থান বাঁচাতে)</span></span>` : `<span class="text-slate-500 italic text-[11px]">কোনো ছবি নেই</span>`);
 
         return `
           <tr class="hover:bg-slate-900/60 transition-colors">
@@ -3477,7 +3535,9 @@
 
       fbDatabase.ref(`taskProofs/${proofId}`).update({
         status: 'approved',
-        reviewedAt: Date.now()
+        reviewedAt: Date.now(),
+        screenshotBase64: null,
+        screenshotDeleted: true
       });
 
       const userPhoneKey = sanitizeKey(p.userPhone);
@@ -3503,9 +3563,14 @@
 
             if (isTimeWall) {
               const currentTw = Number(u.timewallTransfersAvailable || 0);
-              updates.timewallTransfersAvailable = currentTw + 1;
+              const twNeed = Number(adminState.appSettings?.timewallWithdrawCoins || 2000) || 2000;
+              const rc = Number(p.redeemCoins || 0);
+              let unlock = 1, pool = Number(u.timewallRedeemPool || 0);
+              if (rc > 0) { pool += rc; unlock = Math.floor(pool / twNeed); pool -= unlock * twNeed; }
+              updates.timewallRedeemPool = pool;
+              updates.timewallTransfersAvailable = currentTw + unlock;
               updates.timewallTotalApproved = (Number(u.timewallTotalApproved) || 0) + 1;
-              updates.timewallCoinsTransferred = (Number(u.timewallCoinsTransferred) || 0) + (addCoins >= 6000 ? 2000 : 1000);
+              updates.timewallCoinsTransferred = (Number(u.timewallCoinsTransferred) || 0) + (rc > 0 ? rc : twNeed);
             }
 
             fbDatabase.ref(`users/${userPhoneKey}`).update(updates);
@@ -3544,7 +3609,9 @@
       fbDatabase.ref(`taskProofs/${proofId}`).update({
         status: 'rejected',
         rejectReason: reason,
-        reviewedAt: Date.now()
+        reviewedAt: Date.now(),
+        screenshotBase64: null,
+        screenshotDeleted: true
       });
 
       showToast('টাস্ক প্রুফ বাতিল করা হয়েছে!');
@@ -3617,6 +3684,8 @@
       if (document.getElementById('set-timewall-video-url')) document.getElementById('set-timewall-video-url').value = s.timewallVideoUrl || '';
       if (document.getElementById('set-require-channel-join')) document.getElementById('set-require-channel-join').checked = s.requireChannelJoin !== false;
       if (document.getElementById('set-disable-default-tasks')) document.getElementById('set-disable-default-tasks').checked = !!s.disableDefaultTasks;
+      if (document.getElementById('set-timewall-withdraw-coins')) document.getElementById('set-timewall-withdraw-coins').value = s.timewallWithdrawCoins || 2000;
+      if (document.getElementById('set-team-proof-note')) document.getElementById('set-team-proof-note').value = s.teamProofNote || '';
 
       if (document.getElementById('set-reward-unlock-extra')) document.getElementById('set-reward-unlock-extra').value = s.rewardUnlockExtra ?? 200;
       if (document.getElementById('set-reward-watch-ad')) document.getElementById('set-reward-watch-ad').value = s.rewardWatchAd ?? 200;
@@ -3664,6 +3733,8 @@
         timewallVideoUrl: (document.getElementById('set-timewall-video-url')?.value || '').trim(),
         requireChannelJoin: document.getElementById('set-require-channel-join')?.checked !== false,
         disableDefaultTasks: !!document.getElementById('set-disable-default-tasks')?.checked,
+        timewallWithdrawCoins: Number(document.getElementById('set-timewall-withdraw-coins')?.value) || 2000,
+        teamProofNote: (document.getElementById('set-team-proof-note')?.value || '').trim(),
         dailySpinsLimit: Number(document.getElementById('set-daily-spins').value) || 50,
         dailyScratchLimit: Number(document.getElementById('set-daily-scratch').value) || 50,
         dailyCaptchaLimit: Number(document.getElementById('set-daily-captcha').value) || 50,
@@ -3858,8 +3929,8 @@
       const userKey = sanitizeKey(userPhone);
       const rewardCoins = Number(adminState.appSettings?.teamMemberProofRewardCoins || 300);
 
-      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins });
-      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins });
+      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins, screenshotBase64: null, screenshotDeleted: true });
+      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'approved', reviewedAt: Date.now(), rewardCoins: rewardCoins, screenshotBase64: null, screenshotDeleted: true });
       fbDatabase.ref('teamReportIndex/' + userKey + '/' + date).set({ status: 'approved', coins: rewardCoins });
 
       // Award coins to user wallet
@@ -3894,8 +3965,8 @@
       const reason = prompt('রিজেক্টের কারণ:', 'স্ক্রিনশট স্পষ্ট নয়');
       if (reason === null) return;
       const userKey = sanitizeKey(userPhone);
-      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now() });
-      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now() });
+      fbDatabase.ref('teamDailyReportsList/' + listKey).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now(), screenshotBase64: null, screenshotDeleted: true });
+      fbDatabase.ref('dailyTeamReports/' + userKey + '/' + date).update({ status: 'rejected', rejectReason: reason, reviewedAt: Date.now(), screenshotBase64: null, screenshotDeleted: true });
       fbDatabase.ref('teamReportIndex/' + userKey + '/' + date).set({ status: 'rejected' });
       showToast('প্রুফ রিজেক্ট করা হয়েছে');
       loadAdminTeamReports();
@@ -4018,7 +4089,7 @@
             <button onclick="document.getElementById('modal-tl-proof').classList.add('hidden')" class="p-2 rounded-full bg-slate-800 text-slate-300 hover:text-white">✕</button>
           </div>
           <div class="flex-1 overflow-auto rounded-2xl bg-slate-950 border border-slate-800 p-2 flex items-start justify-center min-h-[250px]">
-            ${r.screenshotBase64 ? `<img id="tl-proof-img" src="${r.screenshotBase64}" class="max-w-full rounded-xl transition-transform duration-200 cursor-zoom-in origin-top" onclick="tlProofZoom=tlProofZoom>1?1:1.8;this.style.transform='scale('+tlProofZoom+')'">` : '<div class="text-slate-500 text-sm py-10">স্ক্রিনশট নেই</div>'}
+            ${r.screenshotBase64 ? `<img id="tl-proof-img" src="${r.screenshotBase64}" class="max-w-full rounded-xl transition-transform duration-200 cursor-zoom-in origin-top" onclick="tlProofZoom=tlProofZoom>1?1:1.8;this.style.transform='scale('+tlProofZoom+')'">` : (r.screenshotDeleted ? '<div class="text-slate-400 text-sm py-10 text-center">🗑️ স্ক্রিনশট মুছে ফেলা হয়েছে (ফায়ারবেস স্থান বাঁচাতে)।<br>রেকর্ড (নাম, ফোন, তারিখ, স্ট্যাটাস) থেকে গেছে।</div>' : '<div class="text-slate-500 text-sm py-10">স্ক্রিনশট নেই</div>')}
           </div>
           <div class="flex flex-wrap items-center justify-between gap-2">
             <a href="${r.screenshotBase64 || '#'}" download="proof_${r.userPhone}_${date}.jpg" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold">⬇ ডাউনলোড</a>
